@@ -1,0 +1,13 @@
+requires 'CHI';
+requires 'Data::Printer';
+requires 'DateTime';
+requires 'DateTime::Format::ISO8601';
+requires 'HTTP::Tiny::Mech';
+requires 'LWP::ConsoleLogger::Easy';
+requires 'MetaCPAN::Client';
+requires 'Moose';
+requires 'MooseX::Getopt::Dashes';
+requires 'Pithub';
+requires 'Test::Most';
+requires 'Type::Tiny';
+requires 'WWW::Mechanize::Cached';
