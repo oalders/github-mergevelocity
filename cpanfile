@@ -1,7 +1,10 @@
 requires 'CHI';
 requires 'Data::Printer';
+requires 'Data::Printer::Filter::JSON';
+requires 'Data::Printer::Filter::URI';
 requires 'DateTime';
 requires 'DateTime::Format::ISO8601';
+requires 'CLDR::Number::Format::Percent';
 requires 'HTTP::Tiny::Mech';
 requires 'LWP::ConsoleLogger::Easy';
 requires 'MetaCPAN::Client';
