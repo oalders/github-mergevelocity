@@ -125,7 +125,8 @@ sub run {
 
         next unless $user && $repo;
 
-        push @report, $self->get_report( $user, $repo );
+        my $report = $self->get_report( $user, $repo );
+        push @report, $report if $report;
     }
     $self->_print_report( \@report );
 }
@@ -135,16 +136,24 @@ sub _print_report {
     my $report = shift;
 
     my $table = Text::SimpleTable::AutoWidth->new;
-    my @cols = ( 'user', 'repo', 'merged', 'open', 'closed', );
+    my @cols  = (
+        'user', 'repo',         'pull requests', 'merged', 'avg merge age',
+        'open', 'avg open age', 'closed', 'avg close age'
+    );
     $table->captions( \@cols );
 
     foreach my $row ( @{$report} ) {
+
         $table->row(
             $row->{user},
             $row->{repo},
-            $row->{merged} . " ($row->{percentage_merged})",
+            $row->{total},
+            $row->{merged} . " ($row->{merged_open})",
+            $row->{merged_age} . ' days',
             $row->{open} . " ($row->{percentage_open})",
+            $row->{open_age} . ' days',
             $row->{closed} . " ($row->{percentage_closed})",
+            $row->{closed_age} . ' days',
         );
     }
     print $table->draw;
@@ -161,7 +170,7 @@ sub _get_distributions {
     };
     my $params = {
         fields => [qw(distribution author date version resources)],
-        size   => 50
+        size   => 250
     };
     my $result_set = $self->_metacpan_client->release( $query, $params );
     my %dist;
@@ -182,7 +191,7 @@ sub _get_distributions {
                 version => $release->version,
             };
         }
-        last if keys %dist > 50;
+        last if keys %dist > 250;
     }
     return \%dist;
 }
@@ -193,6 +202,7 @@ sub get_report {
     my $repo = shift;
 
     my $pulls = $self->get_pull_requests( $user, $repo );
+
     return $self->analyze_repo( $user, $repo, $pulls );
 }
 
@@ -212,7 +222,7 @@ sub get_pull_requests {
     while ( my $row = $result->next ) {
 
         # GunioRobot seems to create pull requests that clean up whitespace
-        return if !$row->{user} || $row->{user}->{login} eq 'GunioRobot';
+        next if !$row->{user} || $row->{user}->{login} eq 'GunioRobot';
 
         my $pull_request = Github::MergeVelocity::PullRequest->new(
             login      => $row->{user}->{login},
@@ -235,31 +245,62 @@ sub analyze_repo {
     my $repo          = shift;
     my $pull_requests = shift;
 
-    my %summary = ( repo => $repo, user => $user, );
+    my $total = $pull_requests ? scalar @{$pull_requests} : 0;
+
+    my %summary = (
+        closed     => 0,
+        merged     => 0,
+        open       => 0,
+        repo       => $repo,
+        closed_age => DateTime::Duration->new,
+        merged_age => DateTime::Duration->new,
+        open_age   => DateTime::Duration->new,
+        total      => $total,
+        user       => $user,
+    );
 
     foreach my $pr ( @{$pull_requests} ) {
         $summary{ $pr->state }++;
-        $summary{total_close_time} += $pr->age if $pr->is_closed;
-        $summary{total_merge_time} += $pr->age if $pr->is_merged;
-        $summary{total_open_time}  += $pr->age if $pr->is_open;
+        if ( $pr->is_merged ) {
+            $summary{merged_age}
+                = $summary{merged_age}->add_duration( $pr->age );
+        }
+        elsif ( $pr->is_closed ) {
+            $summary{closed_age}
+                = $summary{closed_age}->add_duration( $pr->age );
+        }
+        else {
+            $summary{open_age}
+                = $summary{open_age}->add_duration( $pr->age );
+        }
     }
 
-    foreach my $state ( 'closed', 'merged', 'open' ) {
+    my @states = ( 'closed', 'merged', 'open' );
+    my @units = ( 'months', 'days', 'hours', 'minutes' );
+    foreach my $state ( @states ) {
         $summary{ 'percentage_' . $state }
-            = $self->format( $summary{$state} / scalar @{$pull_requests} );
-    }
-    return \%summary;
+            = $self->format( $total ? $summary{$state} / $total : 0 );
 
-    # total time open / open
-    # total time to merge / merged
-    # total time to close / closed
+        my $age_col = $state . '_age';
+
+        if ( !$summary{$state} ) {
+            $summary{$age_col} = 0;
+            next;
+        }
+
+        my ( $years, $months, $days )
+            = $summary{$age_col}->in_units( 'years', 'months', 'days' );
+        $summary{$age_col}
+            = ( $years * 365 + $months * 30 ) / $summary{$state};
+    }
+
+    return \%summary;
 }
 
 sub _parse_github_url {
     my $self = shift;
     my $url  = shift;
 
-    print "parsing $url\n";
     my @parts = split '/', $url;
 
     my $repo = pop @parts;
