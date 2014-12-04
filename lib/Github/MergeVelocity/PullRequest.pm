@@ -17,7 +17,7 @@ has age => (
 has closed_at => (
     is        => 'ro',
     isa       => Datetime,
-    predicate => 'has_closed_at',
+    predicate => 'is_closed',
     coerce    => 1,
 );
 
@@ -38,7 +38,7 @@ has login => (
 has merged_at => (
     is        => 'ro',
     isa       => Datetime,
-    predicate => 'has_merged_at',
+    predicate => 'is_merged',
     coerce    => 1,
 );
 
@@ -64,30 +64,30 @@ has updated_at => (
     required  => 1,
 );
 
+sub is_open {
+    my $self = shift;
+    return $self->state eq 'open';
+}
+
 sub _build_age {
     my $self = shift;
 
     my $upper_bound
-        = $self->has_merged_at ? $self->merged_at
-        : $self->has_closed_at ? $self->closed_at
-        :                        DateTime->now;
+        = $self->is_merged ? $self->merged_at
+        : $self->is_closed ? $self->closed_at
+        :                    DateTime->now;
 
     my $duration
         = $upper_bound->subtract_datetime_absolute( $self->created_at );
     return $duration->in_units( 'seconds' );
 }
 
-sub is_merged {
-    my $self = shift;
-    return $self->has_merged_at;
-}
-
 sub _build_state {
     my $self = shift;
     return
-          $self->has_merged_at ? 'merged'
-        : $self->has_closed_at ? 'closed'
-        :                        'open';
+          $self->is_merged ? 'merged'
+        : $self->is_closed ? 'closed'
+        :                    'open';
 }
 
 __PACKAGE__->meta->make_immutable;

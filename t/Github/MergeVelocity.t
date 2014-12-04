@@ -10,16 +10,18 @@ my $velo = Github::MergeVelocity->new(
     github_user     => $ENV{GITHUB_USER},
 );
 
-my $foo = $velo->get_pull_requests( 'plack', 'Plack' );
-diag p $foo;
+my $user = 'plack';
+my $repo = 'Plack';
 
-foreach my $pull ( @{$foo} ) {
-    diag $pull->url;
-    diag $pull->age;
-    diag $pull->state;
-}
+my $pull_requests = $velo->get_pull_requests( $user, $repo );
+ok( $pull_requests, 'get_pull_requests' );
+is( scalar @{$pull_requests}, 100, '100 PRs' );
 
-ok( 1, 'ok!');
+ok( $velo->get_report( $user, $repo ), 'get_report' );
+
+my $repo_summary = $velo->analyze_repo( $user, $repo, $pull_requests );
+p $repo_summary;
+$velo->_print_report( [$repo_summary] );
 
 done_testing();
 

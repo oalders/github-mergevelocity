@@ -5,6 +5,7 @@ use warnings;
 use feature qw( say );
 
 use CHI;
+use CLDR::Number::Format::Percent;
 use Data::Printer;
 use DateTime;
 use DateTime::Format::ISO8601;
@@ -15,6 +16,7 @@ use MetaCPAN::Client;
 use Moose;
 use MooseX::Getopt::Dashes;
 use Pithub::PullRequests;
+use Text::SimpleTable::AutoWidth;
 use WWW::Mechanize::Cached;
 
 with 'MooseX::Getopt::Dashes';
@@ -49,6 +51,14 @@ has github_user => (
     isa           => 'Str',
     required      => 1,
     documentation => 'The username of your Github account',
+);
+
+has _formatter => (
+    is      => 'ro',
+    isa     => 'CLDR::Number::Format::Percent',
+    handles => ['format'],
+    lazy    => 1,
+    default => sub { CLDR::Number::Format::Percent->new( locale => 'en' ) },
 );
 
 has _github_client => (
@@ -105,6 +115,7 @@ sub run {
     my $self = shift;
 
     my $dists = $self->_get_distributions;
+    my @report;
 
     foreach my $dist ( %{$dists} ) {
         my $repo_url = $dists->{$dist}->{repo};
@@ -114,9 +125,30 @@ sub run {
 
         next unless $user && $repo;
 
-        my $velocity = $self->get_merge_velocity( $user, $repo );
-        $dists->{$dist}->{velocity} = $velocity;
+        push @report, $self->get_report( $user, $repo );
     }
+    $self->_print_report( \@report );
+}
+
+sub _print_report {
+    my $self   = shift;
+    my $report = shift;
+
+    my $table = Text::SimpleTable::AutoWidth->new;
+    my @cols = ( 'user', 'repo', 'merged', 'open', 'closed', );
+    $table->captions( \@cols );
+
+    foreach my $row ( @{$report} ) {
+        $table->row(
+            $row->{user},
+            $row->{repo},
+            $row->{merged} . " ($row->{percentage_merged})",
+            $row->{open} . " ($row->{percentage_open})",
+            $row->{closed} . " ($row->{percentage_closed})",
+        );
+    }
+    print $table->draw;
+    return;
 }
 
 sub _get_distributions {
@@ -155,13 +187,13 @@ sub _get_distributions {
     return \%dist;
 }
 
-sub get_merge_velocity {
+sub get_report {
     my $self = shift;
     my $user = shift;
     my $repo = shift;
 
     my $pulls = $self->get_pull_requests( $user, $repo );
-    my $velocity = $self->calculate_velocity( $pulls );
+    return $self->analyze_repo( $user, $repo, $pulls );
 }
 
 sub get_pull_requests {
@@ -176,20 +208,20 @@ sub get_pull_requests {
     );
 
     my @pulls;
+
     while ( my $row = $result->next ) {
 
         # GunioRobot seems to create pull requests that clean up whitespace
         return if !$row->{user} || $row->{user}->{login} eq 'GunioRobot';
 
-        my @args = map { $_ => $row->{$_} }
-            grep { exists $row->{$_} && $row->{$_} } (
-            'closed_at',  'created_at', 'merged_at', 'number',
-            'updated_at', 'url',
-            );
-
         my $pull_request = Github::MergeVelocity::PullRequest->new(
-            login => $row->{user}->{login},
-            @args
+            login      => $row->{user}->{login},
+            created_at => $row->{created_at},
+            number     => $row->{number},
+            updated_at => $row->{updated_at},
+            url        => $row->{url},
+            $row->{closed_at} ? ( closed_at => $row->{closed_at} ) : (),
+            $row->{merged_at} ? ( merged_at => $row->{merged_at} ) : (),
         );
 
         push @pulls, $pull_request;
@@ -197,19 +229,27 @@ sub get_pull_requests {
     return \@pulls;
 }
 
-sub calculate_velocity {
+sub analyze_repo {
     my $self          = shift;
+    my $user          = shift;
+    my $repo          = shift;
     my $pull_requests = shift;
 
-    my %states;
+    my %summary = ( repo => $repo, user => $user, );
 
     foreach my $pr ( @{$pull_requests} ) {
-        $states{ $pr->state }++;
+        $summary{ $pr->state }++;
+        $summary{total_close_time} += $pr->age if $pr->is_closed;
+        $summary{total_merge_time} += $pr->age if $pr->is_merged;
+        $summary{total_open_time}  += $pr->age if $pr->is_open;
     }
-    p %states;
 
-    # merged / closed
-    # open / (open + closed)
+    foreach my $state ( 'closed', 'merged', 'open' ) {
+        $summary{ 'percentage_' . $state }
+            = $self->format( $summary{$state} / scalar @{$pull_requests} );
+    }
+    return \%summary;
+
     # total time open / open
     # total time to merge / merged
     # total time to close / closed
