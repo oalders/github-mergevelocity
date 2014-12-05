@@ -3,13 +3,13 @@ package Github::MergeVelocity::PullRequest;
 use Moose;
 
 use DateTime;
-use Github::MergeVelocity::Types qw( Datetime Duration );
+use Github::MergeVelocity::Types qw( Datetime );
 use Types::Standard qw( Int Str );
 
 has age => (
     is       => 'ro',
     init_arg => undef,
-    isa      => Duration,
+    isa      => Int,
     lazy     => 1,
     builder  => '_build_age',
 );
@@ -77,7 +77,7 @@ sub _build_age {
         : $self->is_closed ? $self->closed_at
         :                    DateTime->now;
 
-    return $upper_bound->subtract_datetime( $self->created_at );
+    return $upper_bound->delta_days( $self->created_at )->days;
 }
 
 sub _build_state {

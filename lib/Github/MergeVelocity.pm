@@ -18,6 +18,7 @@ use MooseX::Getopt::Dashes;
 use MooseX::StrictConstructor;
 use Pithub::PullRequests;
 use Text::SimpleTable::AutoWidth;
+use Types::Standard qw( ArrayRef Bool Str );
 use Unicode::Char;
 use WWW::Mechanize::Cached;
 
@@ -25,7 +26,7 @@ with 'MooseX::Getopt::Dashes';
 
 has debug_useragent => (
     is            => 'ro',
-    isa           => 'Bool',
+    isa           => Bool,
     documentation => 'Print a _lot_ of debugging info about LWP requests',
 );
 
@@ -37,13 +38,13 @@ EOF
 
 has cache_requests => (
     is            => 'ro',
-    isa           => 'Bool',
+    isa           => Bool,
     documentation => 'Try to cache GET requests',
 );
 
 has dist => (
     is      => 'ro',
-    isa     => 'ArrayRef',
+    isa     => ArrayRef,
     traits  => ['Array'],
     handles => { _all_lookups => 'elements' },
     documentation =>
@@ -52,21 +53,21 @@ has dist => (
 
 has github_token => (
     is            => 'ro',
-    isa           => 'Str',
+    isa           => Str,
     required      => 1,
     documentation => $token_help,
 );
 
 has github_user => (
     is            => 'ro',
-    isa           => 'Str',
+    isa           => Str,
     required      => 1,
     documentation => 'The username of your Github account',
 );
 
 has report => (
     is       => 'ro',
-    isa      => 'ArrayRef',
+    isa      => ArrayRef,
     traits   => ['Array'],
     init_arg => undef,
     handles  => { '_report_rows' => 'elements' },
@@ -84,7 +85,7 @@ has _char => (
 
 has _repositories => (
     is      => 'ro',
-    isa     => 'ArrayRef',
+    isa     => ArrayRef,
     traits  => ['Array'],
     handles => { '_all_repositories' => 'elements' },
     lazy    => 1,
@@ -170,9 +171,9 @@ sub print_report {
 
     my $table = Text::SimpleTable::AutoWidth->new;
     my @cols  = (
-        q{},      'user',          'repo', 'pull requests',
-        'merged', 'avg merge age', 'open', 'avg open age',
-        'closed', 'avg close age'
+        q{},      'user',          'repo', 'PRs',
+        'merged', 'avg merge days', 'open', 'avg open days',
+        'closed', 'avg close days'
     );
     $table->captions( \@cols );
 
@@ -183,15 +184,15 @@ sub print_report {
             $row->{repo},
             $row->{total},
             $self->_format_percent( $row->{percentage_merged} ),
-            $row->{merged_age} . ' days',
+            $row->{merged_age},
             $self->_format_percent( $row->{percentage_open} ),
-            $row->{open_age} . ' days',
+            $row->{open_age},
             $self->_format_percent( $row->{percentage_closed} ),
-            $row->{closed_age} . ' days',
+            $row->{closed_age},
         );
     }
 
-    binmode(STDOUT, ':utf8');
+    binmode( STDOUT, ':utf8' );
     print $table->draw;
     return;
 }
@@ -265,9 +266,9 @@ sub _analyze_repo {
         merged     => 0,
         open       => 0,
         repo       => $repo,
-        closed_age => DateTime::Duration->new,
-        merged_age => DateTime::Duration->new,
-        open_age   => DateTime::Duration->new,
+        closed_age => 0,
+        merged_age => 0,
+        open_age   => 0,
         total      => $total,
         user       => $user,
     );
@@ -275,37 +276,20 @@ sub _analyze_repo {
     foreach my $pr ( @{$pulls} ) {
         $summary{ $pr->state }++;
         if ( $pr->is_merged ) {
-            $summary{merged_age}
-                = $summary{merged_age}->add_duration( $pr->age );
+            $summary{merged_age} += $pr->age;
         }
         elsif ( $pr->is_closed ) {
-            $summary{closed_age}
-                = $summary{closed_age}->add_duration( $pr->age );
+            $summary{closed_age} += $pr->age;
         }
         else {
-            $summary{open_age}
-                = $summary{open_age}->add_duration( $pr->age );
+            $summary{open_age} += $pr->age;
         }
     }
 
     my @states = ( 'closed', 'merged', 'open' );
-    my @units = ( 'months', 'days', 'hours', 'minutes' );
     foreach my $state ( @states ) {
         $summary{ 'percentage_' . $state }
             = $total ? $summary{$state} / $total : 0;
-
-        my $age_col = $state . '_age';
-
-        if ( !$summary{$state} ) {
-            $summary{$age_col} = 0;
-            next;
-        }
-
-        my ( $years, $months, $days )
-            = $summary{$age_col}->in_units( 'years', 'months', 'days' );
-
-        $summary{$age_col}
-            = round( ( $years * 365 + $months * 30 ) / $summary{$state} );
     }
 
     $summary{is_nice}
