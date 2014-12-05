@@ -43,10 +43,11 @@ has cache_requests => (
 );
 
 has dist => (
-    is      => 'ro',
-    isa     => ArrayRef,
-    traits  => ['Array'],
-    handles => { _all_lookups => 'elements' },
+    is       => 'ro',
+    isa      => ArrayRef,
+    traits   => ['Array'],
+    handles  => { _all_lookups => 'elements' },
+    required => 1,
     documentation =>
         'One or more distributions to look up. You can add multiple --dist args.',
 );
@@ -54,14 +55,14 @@ has dist => (
 has github_token => (
     is            => 'ro',
     isa           => Str,
-    required      => 1,
+    required      => 0,
     documentation => $token_help,
 );
 
 has github_user => (
     is            => 'ro',
     isa           => Str,
-    required      => 1,
+    required      => 0,
     documentation => 'The username of your Github account',
 );
 
@@ -101,10 +102,7 @@ has _metacpan_client => (
     is      => 'ro',
     isa     => 'MetaCPAN::Client',
     lazy    => 1,
-    default => sub {
-        return MetaCPAN::Client->new(
-            ua => HTTP::Tiny::Mech->new( mechua => $_[0]->_mech ) );
-    },
+    builder => '_build_metacpan_client',
 );
 
 has _repositories => (
@@ -127,9 +125,10 @@ has _percent_formatter => (
 sub _build_github_client {
     my $self = shift;
     return Pithub::PullRequests->new(
-        ua    => $self->_mech,
-        user  => $self->github_user,
-        token => $self->github_token
+        $self->cache_requests
+            || $self->debug_useragent ? ( ua => $self->_mech ) : (),
+        $self->github_user  ? ( user  => $self->github_user )  : (),
+        $self->github_token ? ( token => $self->github_token ) : (),
     );
 }
 
@@ -148,6 +147,15 @@ sub _build_mech {
 
     debug_ua( $mech ) if $self->debug_useragent;
     return $mech;
+}
+
+sub _build_metacpan_client {
+    my $self = shift;
+    return MetaCPAN::Client->new(
+        $self->cache_requests || $self->debug_useragent
+        ? ( ua => HTTP::Tiny::Mech->new( mechua => $self->_mech ) )
+        : ()
+    );
 }
 
 sub _build_report {
@@ -193,7 +201,7 @@ sub print_report {
 
     my $table = Text::SimpleTable::AutoWidth->new;
     my @cols  = (
-        q{},      'user',          'repo', 'PRs',
+        q{},      'user',           'repo', 'PRs',
         'merged', 'avg merge days', 'open', 'avg open days',
         'closed', 'avg close days'
     );

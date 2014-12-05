@@ -6,7 +6,15 @@ you determine how likely it is that your pull request will be merged within a
 
     git clone https://github.com/oalders/github-mergevelocity
     cd github-mergevelocity
+
+    # using carton
     carton install
-    carton exec -- bin/velocity --github-token XXX --github-user XXX --dist HTTP-BrowserDetect --dist Plack
+    carton exec -- bin/velocity.pl --dist HTTP-BrowserDetect --dist Plack
 
+    # without carton
+    cpanm --installdeps .
+    perl bin/velocity.pl --dist HTTP-BrowserDetect --dist Plack
 
+If you want to run a lot of queries, you'll need a Github token and username.  For help:
+
+    carton exec -- bin/velocity.pl
