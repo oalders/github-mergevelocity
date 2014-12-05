@@ -190,6 +190,8 @@ sub print_report {
             $row->{closed_age} . ' days',
         );
     }
+
+    binmode(STDOUT, ':utf8');
     print $table->draw;
     return;
 }

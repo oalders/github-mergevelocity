@@ -8,7 +8,7 @@ my $velo = Github::MergeVelocity->new(
     debug_useragent => 0,
     github_token    => $ENV{GITHUB_TOKEN},
     github_user     => $ENV{GITHUB_USER},
-    dist            => ['HTML-Restrict', 'Moose', 'PAUSE-Permissions', 'Text-Xslate', 'CGI', 'libwww-perl'],
+    dist            => ['HTML-Restrict', 'Moose', 'PAUSE-Permissions', 'Text-Xslate', 'CGI', 'libwww-perl', 'Plack::Session', 'DateTime', 'Dist-Zilla'],
 );
 
 ok( $velo->report, 'report' );
