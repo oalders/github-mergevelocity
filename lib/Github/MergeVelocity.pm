@@ -83,23 +83,6 @@ has _char => (
     default => sub { Unicode::Char->new },
 );
 
-has _repositories => (
-    is      => 'ro',
-    isa     => ArrayRef,
-    traits  => ['Array'],
-    handles => { '_all_repositories' => 'elements' },
-    lazy    => 1,
-    builder => '_build_repositories',
-);
-
-has _percent_formatter => (
-    is      => 'ro',
-    isa     => 'CLDR::Number::Format::Percent',
-    handles => { '_format_percent' => 'format' },
-    lazy    => 1,
-    default => sub { CLDR::Number::Format::Percent->new( locale => 'en' ) },
-);
-
 has _github_client => (
     is      => 'ro',
     isa     => 'Pithub::PullRequests',
@@ -122,6 +105,23 @@ has _metacpan_client => (
         return MetaCPAN::Client->new(
             ua => HTTP::Tiny::Mech->new( mechua => $_[0]->_mech ) );
     },
+);
+
+has _repositories => (
+    is      => 'ro',
+    isa     => ArrayRef,
+    traits  => ['Array'],
+    handles => { '_all_repositories' => 'elements' },
+    lazy    => 1,
+    builder => '_build_repositories',
+);
+
+has _percent_formatter => (
+    is      => 'ro',
+    isa     => 'CLDR::Number::Format::Percent',
+    handles => { '_format_percent' => 'format' },
+    lazy    => 1,
+    default => sub { CLDR::Number::Format::Percent->new( locale => 'en' ) },
 );
 
 sub _build_github_client {
@@ -166,6 +166,28 @@ sub _build_report {
     return \@report;
 }
 
+sub _build_repositories {
+    my $self = shift;
+
+    my @either = map { +{ distribution => $_ } } $self->_all_lookups;
+
+    my $query
+        = { all => [ { status => 'latest' }, { either => \@either }, ] };
+
+    my $params = {
+        fields => [qw(distribution resources)],
+        size   => 250,
+    };
+
+    my $resultset = $self->_metacpan_client->release( $query, $params );
+    my @repositories;
+    while ( my $dist = $resultset->next ) {
+        next unless $dist->resources->{repository}->{url};
+        push @repositories, $dist->resources->{repository}->{url};
+    }
+    return \@repositories;
+}
+
 sub print_report {
     my $self = shift;
 
@@ -195,61 +217,6 @@ sub print_report {
     binmode( STDOUT, ':utf8' );
     print $table->draw;
     return;
-}
-
-sub _build_repositories {
-    my $self = shift;
-
-    my @either = map { +{ distribution => $_ } } $self->_all_lookups;
-
-    my $query
-        = { all => [ { status => 'latest' }, { either => \@either }, ] };
-
-    my $params = {
-        fields => [qw(distribution resources)],
-        size   => 250,
-    };
-
-    my $resultset = $self->_metacpan_client->release( $query, $params );
-    my @repositories;
-    while ( my $dist = $resultset->next ) {
-        next unless $dist->resources->{repository}->{url};
-        push @repositories, $dist->resources->{repository}->{url};
-    }
-    return \@repositories;
-}
-
-sub _get_pull_requests {
-    my $self = shift;
-    my $user = shift;
-    my $repo = shift;
-
-    my $result = $self->_github_client->list(
-        user   => $user,
-        repo   => $repo,
-        params => { per_page => 100, state => 'all' },
-    );
-
-    my @pulls;
-
-    while ( my $row = $result->next ) {
-
-        # GunioRobot seems to create pull requests that clean up whitespace
-        next if !$row->{user} || $row->{user}->{login} eq 'GunioRobot';
-
-        my $pull_request = Github::MergeVelocity::PullRequest->new(
-            login      => $row->{user}->{login},
-            created_at => $row->{created_at},
-            number     => $row->{number},
-            updated_at => $row->{updated_at},
-            url        => $row->{url},
-            $row->{closed_at} ? ( closed_at => $row->{closed_at} ) : (),
-            $row->{merged_at} ? ( merged_at => $row->{merged_at} ) : (),
-        );
-
-        push @pulls, $pull_request;
-    }
-    return \@pulls;
 }
 
 sub _analyze_repo {
@@ -300,6 +267,39 @@ sub _analyze_repo {
         || ( $summary{open_age} < 365 && $summary{percentage_open} < .15 );
 
     return \%summary;
+}
+
+sub _get_pull_requests {
+    my $self = shift;
+    my $user = shift;
+    my $repo = shift;
+
+    my $result = $self->_github_client->list(
+        user   => $user,
+        repo   => $repo,
+        params => { per_page => 100, state => 'all' },
+    );
+
+    my @pulls;
+
+    while ( my $row = $result->next ) {
+
+        # GunioRobot seems to create pull requests that clean up whitespace
+        next if !$row->{user} || $row->{user}->{login} eq 'GunioRobot';
+
+        my $pull_request = Github::MergeVelocity::PullRequest->new(
+            login      => $row->{user}->{login},
+            created_at => $row->{created_at},
+            number     => $row->{number},
+            updated_at => $row->{updated_at},
+            url        => $row->{url},
+            $row->{closed_at} ? ( closed_at => $row->{closed_at} ) : (),
+            $row->{merged_at} ? ( merged_at => $row->{merged_at} ) : (),
+        );
+
+        push @pulls, $pull_request;
+    }
+    return \@pulls;
 }
 
 sub _parse_github_url {
