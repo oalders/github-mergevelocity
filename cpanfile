@@ -13,4 +13,5 @@ requires 'MooseX::Getopt::Dashes';
 requires 'Pithub';
 requires 'Test::Most';
 requires 'Type::Tiny';
+requires 'Unicode::Char';
 requires 'WWW::Mechanize::Cached';

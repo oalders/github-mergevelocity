@@ -6,7 +6,6 @@ use feature qw( say );
 
 use CHI;
 use CLDR::Number::Format::Percent;
-use CLDR::Number::Format::Decimal;
 use Data::Printer;
 use DateTime::Duration;
 use Github::MergeVelocity::PullRequest;
@@ -78,9 +77,8 @@ has report => (
 has _char => (
     is      => 'ro',
     isa     => 'Unicode::Char',
-    handles => { naughty => 'warning_sign', nice => 'father_christmas', },
+    handles => { _naughty => 'warning_sign', _nice => 'father_christmas', },
     lazy    => 1,
-    builder => '_build_char',
     default => sub { Unicode::Char->new },
 );
 
@@ -172,22 +170,23 @@ sub print_report {
 
     my $table = Text::SimpleTable::AutoWidth->new;
     my @cols  = (
-        'user',          'repo', 'pull requests', 'merged',
-        'avg merge age', 'open', 'avg open age',  'closed',
-        'avg close age'
+        q{},      'user',          'repo', 'pull requests',
+        'merged', 'avg merge age', 'open', 'avg open age',
+        'closed', 'avg close age'
     );
     $table->captions( \@cols );
 
     foreach my $row ( $self->_report_rows ) {
         $table->row(
+            $row->{is_nice} ? $self->_nice : $self->_naughty,
             $row->{user},
             $row->{repo},
             $row->{total},
-            $row->{merged} . " ($row->{percentage_merged})",
+            $self->_format_percent( $row->{percentage_merged} ),
             $row->{merged_age} . ' days',
-            $row->{open} . " ($row->{percentage_open})",
+            $self->_format_percent( $row->{percentage_open} ),
             $row->{open_age} . ' days',
-            $row->{closed} . " ($row->{percentage_closed})",
+            $self->_format_percent( $row->{percentage_closed} ),
             $row->{closed_age} . ' days',
         );
     }
@@ -291,8 +290,7 @@ sub _analyze_repo {
     my @units = ( 'months', 'days', 'hours', 'minutes' );
     foreach my $state ( @states ) {
         $summary{ 'percentage_' . $state }
-            = $self->_format_percent(
-            $total ? $summary{$state} / $total : 0 );
+            = $total ? $summary{$state} / $total : 0;
 
         my $age_col = $state . '_age';
 
@@ -307,6 +305,13 @@ sub _analyze_repo {
         $summary{$age_col}
             = round( ( $years * 365 + $months * 30 ) / $summary{$state} );
     }
+
+    $summary{is_nice}
+        = ( $summary{percentage_merged} >= .75 && $summary{merged_age} < 40 )
+        || ( $summary{merged_age} < 30
+        && $summary{closed_age} < 30
+        && $summary{percentage_open} <= .25 )
+        || ( $summary{open_age} < 365 && $summary{percentage_open} < .15 );
 
     return \%summary;
 }
