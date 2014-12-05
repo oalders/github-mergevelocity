@@ -8,20 +8,12 @@ my $velo = Github::MergeVelocity->new(
     debug_useragent => 0,
     github_token    => $ENV{GITHUB_TOKEN},
     github_user     => $ENV{GITHUB_USER},
+    dist            => ['HTML-Restrict', 'Moose', 'Text-Xslate'],
 );
 
-my $user = 'plack';
-my $repo = 'Plack';
-
-my $pull_requests = $velo->get_pull_requests( $user, $repo );
-ok( $pull_requests, 'get_pull_requests' );
-is( scalar @{$pull_requests}, 100, '100 PRs' );
-
-ok( $velo->get_report( $user, $repo ), 'get_report' );
-
-my $repo_summary = $velo->analyze_repo( $user, $repo, $pull_requests );
-p $repo_summary;
-$velo->_print_report( [$repo_summary] );
+ok( $velo->report, 'report' );
+diag p $velo->report;
+diag $velo->print_report;
 
 done_testing();
 

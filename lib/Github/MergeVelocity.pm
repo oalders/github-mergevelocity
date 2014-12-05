@@ -6,17 +6,20 @@ use feature qw( say );
 
 use CHI;
 use CLDR::Number::Format::Percent;
+use CLDR::Number::Format::Decimal;
 use Data::Printer;
-use DateTime;
-use DateTime::Format::ISO8601;
+use DateTime::Duration;
 use Github::MergeVelocity::PullRequest;
 use HTTP::Tiny::Mech;
 use LWP::ConsoleLogger::Easy qw( debug_ua );
+use Math::Round qw( round );
 use MetaCPAN::Client;
 use Moose;
 use MooseX::Getopt::Dashes;
+use MooseX::StrictConstructor;
 use Pithub::PullRequests;
 use Text::SimpleTable::AutoWidth;
+use Unicode::Char;
 use WWW::Mechanize::Cached;
 
 with 'MooseX::Getopt::Dashes';
@@ -39,6 +42,15 @@ has cache_requests => (
     documentation => 'Try to cache GET requests',
 );
 
+has dist => (
+    is      => 'ro',
+    isa     => 'ArrayRef',
+    traits  => ['Array'],
+    handles => { _all_lookups => 'elements' },
+    documentation =>
+        'One or more distributions to look up. You can add multiple --dist args.',
+);
+
 has github_token => (
     is            => 'ro',
     isa           => 'Str',
@@ -53,10 +65,38 @@ has github_user => (
     documentation => 'The username of your Github account',
 );
 
-has _formatter => (
+has report => (
+    is       => 'ro',
+    isa      => 'ArrayRef',
+    traits   => ['Array'],
+    init_arg => undef,
+    handles  => { '_report_rows' => 'elements' },
+    lazy     => 1,
+    builder  => '_build_report',
+);
+
+has _char => (
+    is      => 'ro',
+    isa     => 'Unicode::Char',
+    handles => { naughty => 'warning_sign', nice => 'father_christmas', },
+    lazy    => 1,
+    builder => '_build_char',
+    default => sub { Unicode::Char->new },
+);
+
+has _repositories => (
+    is      => 'ro',
+    isa     => 'ArrayRef',
+    traits  => ['Array'],
+    handles => { '_all_repositories' => 'elements' },
+    lazy    => 1,
+    builder => '_build_repositories',
+);
+
+has _percent_formatter => (
     is      => 'ro',
     isa     => 'CLDR::Number::Format::Percent',
-    handles => ['format'],
+    handles => { '_format_percent' => 'format' },
     lazy    => 1,
     default => sub { CLDR::Number::Format::Percent->new( locale => 'en' ) },
 );
@@ -111,44 +151,39 @@ sub _build_mech {
     return $mech;
 }
 
-sub run {
+sub _build_report {
     my $self = shift;
 
-    my $dists = $self->_get_distributions;
     my @report;
 
-    foreach my $dist ( %{$dists} ) {
-        my $repo_url = $dists->{$dist}->{repo};
-        next if !$repo_url;
-
+    foreach my $repo_url ( $self->_all_repositories ) {
         my ( $user, $repo ) = $self->_parse_github_url( $repo_url );
 
         next unless $user && $repo;
 
-        my $report = $self->get_report( $user, $repo );
+        my $report = $self->_analyze_repo( $user, $repo );
         push @report, $report if $report;
     }
-    $self->_print_report( \@report );
+    return \@report;
 }
 
-sub _print_report {
-    my $self   = shift;
-    my $report = shift;
+sub print_report {
+    my $self = shift;
 
     my $table = Text::SimpleTable::AutoWidth->new;
     my @cols  = (
-        'user', 'repo',         'pull requests', 'merged', 'avg merge age',
-        'open', 'avg open age', 'closed', 'avg close age'
+        'user',          'repo', 'pull requests', 'merged',
+        'avg merge age', 'open', 'avg open age',  'closed',
+        'avg close age'
     );
     $table->captions( \@cols );
 
-    foreach my $row ( @{$report} ) {
-
+    foreach my $row ( $self->_report_rows ) {
         $table->row(
             $row->{user},
             $row->{repo},
             $row->{total},
-            $row->{merged} . " ($row->{merged_open})",
+            $row->{merged} . " ($row->{percentage_merged})",
             $row->{merged_age} . ' days',
             $row->{open} . " ($row->{percentage_open})",
             $row->{open_age} . ' days',
@@ -160,53 +195,29 @@ sub _print_report {
     return;
 }
 
-sub _get_distributions {
-    my $self  = shift;
-    my $query = {
-        all => [
-            { status                     => 'latest' },
-            { 'resources.repository.url' => '*github*' }
-        ]
-    };
-    my $params = {
-        fields => [qw(distribution author date version resources)],
-        size   => 250
-    };
-    my $result_set = $self->_metacpan_client->release( $query, $params );
-    my %dist;
-
-    while ( my $release = $result_set->next ) {
-        my $distname = $release->distribution;
-        next
-            if $distname
-            =~ /^(Acme|Task-BeLike|Dist-Zilla-PluginBundle-Author)/;
-
-        if ( !exists( $dist{$distname} )
-            || $dist{$distname}{date} lt $release->date )
-        {
-            $dist{$distname} = {
-                author  => $release->author,
-                date    => $release->date,
-                repo    => $release->resources->{repository}->{url},
-                version => $release->version,
-            };
-        }
-        last if keys %dist > 250;
-    }
-    return \%dist;
-}
-
-sub get_report {
+sub _build_repositories {
     my $self = shift;
-    my $user = shift;
-    my $repo = shift;
 
-    my $pulls = $self->get_pull_requests( $user, $repo );
+    my @either = map { +{ distribution => $_ } } $self->_all_lookups;
 
-    return $self->analyze_repo( $user, $repo, $pulls );
+    my $query
+        = { all => [ { status => 'latest' }, { either => \@either }, ] };
+
+    my $params = {
+        fields => [qw(distribution resources)],
+        size   => 250,
+    };
+
+    my $resultset = $self->_metacpan_client->release( $query, $params );
+    my @repositories;
+    while ( my $dist = $resultset->next ) {
+        next unless $dist->resources->{repository}->{url};
+        push @repositories, $dist->resources->{repository}->{url};
+    }
+    return \@repositories;
 }
 
-sub get_pull_requests {
+sub _get_pull_requests {
     my $self = shift;
     my $user = shift;
     my $repo = shift;
@@ -239,13 +250,14 @@ sub get_pull_requests {
     return \@pulls;
 }
 
-sub analyze_repo {
-    my $self          = shift;
-    my $user          = shift;
-    my $repo          = shift;
-    my $pull_requests = shift;
+sub _analyze_repo {
+    my $self = shift;
+    my $user = shift;
+    my $repo = shift;
 
-    my $total = $pull_requests ? scalar @{$pull_requests} : 0;
+    my $pulls = $self->_get_pull_requests( $user, $repo );
+
+    my $total = $pulls ? scalar @{$pulls} : 0;
 
     my %summary = (
         closed     => 0,
@@ -259,7 +271,7 @@ sub analyze_repo {
         user       => $user,
     );
 
-    foreach my $pr ( @{$pull_requests} ) {
+    foreach my $pr ( @{$pulls} ) {
         $summary{ $pr->state }++;
         if ( $pr->is_merged ) {
             $summary{merged_age}
@@ -279,7 +291,8 @@ sub analyze_repo {
     my @units = ( 'months', 'days', 'hours', 'minutes' );
     foreach my $state ( @states ) {
         $summary{ 'percentage_' . $state }
-            = $self->format( $total ? $summary{$state} / $total : 0 );
+            = $self->_format_percent(
+            $total ? $summary{$state} / $total : 0 );
 
         my $age_col = $state . '_age';
 
@@ -290,8 +303,9 @@ sub analyze_repo {
 
         my ( $years, $months, $days )
             = $summary{$age_col}->in_units( 'years', 'months', 'days' );
+
         $summary{$age_col}
-            = ( $years * 365 + $months * 30 ) / $summary{$state};
+            = round( ( $years * 365 + $months * 30 ) / $summary{$state} );
     }
 
     return \%summary;
