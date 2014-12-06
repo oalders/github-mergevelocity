@@ -1,3 +1,5 @@
 *.swp
+.env
+.tidyall.d
 cpanfile.snapshot
 local
