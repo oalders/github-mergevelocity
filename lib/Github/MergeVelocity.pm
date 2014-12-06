@@ -135,15 +135,19 @@ sub _build_github_client {
 sub _build_mech {
     my $self = shift;
 
-    my $mech
-        = $self->cache_requests
-        ? WWW::Mechanize::Cached->new(
-        cache => CHI->new(
-            driver   => 'File',
-            root_dir => '/tmp/metacpan-cache',
-        )
-        )
-        : WWW::Mechanize->new;
+    my $mech;
+
+    if ( $self->cache_requests ) {
+        $mech = WWW::Mechanize::Cached->new(
+            cache => CHI->new(
+                driver   => 'File',
+                root_dir => '/tmp/metacpan-cache',
+            )
+        );
+    }
+    else {
+        $mech = WWW::Mechanize->new;
+    }
 
     debug_ua( $mech ) if $self->debug_useragent;
     return $mech;
@@ -151,11 +155,13 @@ sub _build_mech {
 
 sub _build_metacpan_client {
     my $self = shift;
-    return MetaCPAN::Client->new(
-        $self->cache_requests || $self->debug_useragent
-        ? ( ua => HTTP::Tiny::Mech->new( mechua => $self->_mech ) )
-        : ()
-    );
+
+    my %args;
+    if ( $self->cache_requests || $self->debug_useragent ) {
+        $args{ua} = HTTP::Tiny::Mech->new( mechua => $self->_mech );
+    }
+
+    return MetaCPAN::Client->new( %args );
 }
 
 sub _build_report {
@@ -166,7 +172,10 @@ sub _build_report {
     foreach my $repo_url ( $self->_all_repositories ) {
         my ( $user, $repo ) = $self->_parse_github_url( $repo_url );
 
-        next unless $user && $repo;
+        if ( !( $user && $repo ) ) {
+            warn "Could not parse $repo_url";
+            next;
+        }
 
         my $report = $self->_analyze_repo( $user, $repo );
         push @report, $report if $report;
@@ -190,7 +199,10 @@ sub _build_repositories {
     my $resultset = $self->_metacpan_client->release( $query, $params );
     my @repositories;
     while ( my $dist = $resultset->next ) {
-        next unless $dist->resources->{repository}->{url};
+        if ( !$dist->resources->{repository}->{url} ) {
+            warn 'No repo found for ' . $dist->distribution;
+            next;
+        }
         push @repositories, $dist->resources->{repository}->{url};
     }
     return \@repositories;
@@ -233,7 +245,6 @@ sub _analyze_repo {
     my $repo = shift;
 
     my $pulls = $self->_get_pull_requests( $user, $repo );
-
     my $total = $pulls ? scalar @{$pulls} : 0;
 
     my %summary = (
@@ -250,21 +261,12 @@ sub _analyze_repo {
 
     foreach my $pr ( @{$pulls} ) {
         $summary{ $pr->state }++;
-        if ( $pr->is_merged ) {
-            $summary{merged_age} += $pr->age;
-        }
-        elsif ( $pr->is_closed ) {
-            $summary{closed_age} += $pr->age;
-        }
-        else {
-            $summary{open_age} += $pr->age;
-        }
+        $summary{ $pr->state . '_age' } += $pr->age;
     }
 
-    my @states = ( 'closed', 'merged', 'open' );
-    foreach my $state ( @states ) {
-        $summary{ 'percentage_' . $state }
-            = $total ? $summary{$state} / $total : 0;
+    foreach my $state ( 'closed', 'merged', 'open' ) {
+        my $percent = $total ? $summary{$state} / $total : 0;
+        $summary{ 'percentage_' . $state } = $percent;
     }
 
     $summary{is_nice}
@@ -272,7 +274,8 @@ sub _analyze_repo {
         || ( $summary{merged_age} < 30
         && $summary{closed_age} < 30
         && $summary{percentage_open} <= .25 )
-        || ( $summary{open_age} < 365 && $summary{percentage_open} < .15 );
+        || ( $summary{open_age} < 365
+        && $summary{percentage_open} < .15 );
 
     return \%summary;
 }
