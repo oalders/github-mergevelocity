@@ -296,11 +296,7 @@ sub _get_pull_requests {
         next if !$row->{user} || $row->{user}->{login} eq 'GunioRobot';
 
         my $pull_request = Github::MergeVelocity::PullRequest->new(
-            login      => $row->{user}->{login},
             created_at => $row->{created_at},
-            number     => $row->{number},
-            updated_at => $row->{updated_at},
-            url        => $row->{url},
             $row->{closed_at} ? ( closed_at => $row->{closed_at} ) : (),
             $row->{merged_at} ? ( merged_at => $row->{merged_at} ) : (),
         );

@@ -4,6 +4,7 @@ use Moose;
 
 use DateTime;
 use Github::MergeVelocity::Types qw( Datetime );
+use MooseX::StrictConstructor;
 use Types::Standard qw( Int Str );
 
 has age => (
@@ -29,12 +30,6 @@ has created_at => (
     required  => 1,
 );
 
-has login => (
-    is       => 'ro',
-    isa      => Str,
-    required => 1,
-);
-
 has merged_at => (
     is        => 'ro',
     isa       => Datetime,
@@ -48,20 +43,6 @@ has state => (
     init_arg => undef,
     lazy     => 1,
     builder  => '_build_state',
-);
-
-has url => (
-    is       => 'ro',
-    isa      => Str,
-    required => 1,
-);
-
-has updated_at => (
-    is        => 'ro',
-    isa       => Datetime,
-    predicate => 'has_updated_at',
-    coerce    => 1,
-    required  => 1,
 );
 
 sub is_open {

@@ -4,10 +4,10 @@ use DDP;
 use Github::MergeVelocity;
 
 my $velo = Github::MergeVelocity->new(
-    cache_requests  => 1,
-    debug_useragent => 0,
-    github_token    => $ENV{GITHUB_TOKEN},
-    github_user     => $ENV{GITHUB_USER},
+    cache_requests  => $ENV{GMV_CACHE_REQUESTS},
+    debug_useragent => $ENV{GMV_DEBUG_USERAGENT},
+    github_token    => $ENV{GMV_GITHUB_TOKEN},
+    github_user     => $ENV{GMV_GITHUB_USER},
     dist            => [
         'HTML-Restrict',     'Moose',
         'PAUSE-Permissions', 'Text-Xslate',
