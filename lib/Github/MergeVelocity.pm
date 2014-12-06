@@ -7,7 +7,6 @@ use feature qw( say );
 use CHI;
 use CLDR::Number::Format::Percent;
 use Data::Printer;
-use DateTime::Duration;
 use Github::MergeVelocity::PullRequest;
 use HTTP::Tiny::Mech;
 use LWP::ConsoleLogger::Easy qw( debug_ua );
