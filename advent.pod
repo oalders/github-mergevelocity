@@ -1,0 +1,503 @@
+=pod
+
+=encoding utf-8
+
+=head1 DESCRIPTION
+
+Using Pithub to determine who is naughty and nice.
+
+It's that time of year again.  For many of us, the holidays are quickly
+approaching. Perl Advent articles hang thick in the air. Gift giving is in the
+spirit of the season and sometimes you just want to give the gift of code.  If
+you're participating in 24pullrequests.com or are even just looking for
+something to contribute to, you'll want to know that your gift of love/code
+will find a happy home.  You'll want to take a few factors into account before
+deciding how to spend your valuable free time.  One important consideration is,
+"will this code get merged or is it destined to languish forlorn as a pull
+request?"  Nobody can predict the future, but there are some indicators (like
+recent project activity), which you can take into account.  The Github API can
+be a valuable tool in automating this process.  Today we're going to look not
+at recent commits, but recent merge activity.  We'll accept the names of Perl
+distributions, look them up on MetaCPAN to find their official repository
+locations and then get up to the last 100 pull requests.  Once we have the pull
+request data we'll try to figure out how likely it is that a pull request will
+get merged in some (arbitrary) reasonable amount of time.  If your chances look
+bad, we'll call the distribution naughty.  If it's a paradise for code merges
+or if we just don't have enough data points to make a decision, it's nice.
+
+=head1 Getting the repository URL for a CPAN distribution
+
+First off, let's work on getting the Github repository url for an arbitrary
+CPAN distribution.
+
+    use MetaCPAN::Client;
+    my $metacpan = MetaCPAN::Client->new;
+
+    my $query = {
+        all => [
+            { status => 'latest' },
+            {   either => [
+                    { distribution => 'HTML-Restrict' },
+                    { distribution => 'LWP-ConsoleLogger' },
+                    { distribution => 'HTTP-BrowserDetect' },
+                ]
+            },
+        ]
+    };
+
+    my $params = {
+        fields => [qw(distribution resources)],
+        size   => 250,
+    };
+
+    my $resultset = $metacpan->release( $query, $params );
+    my @repositories;
+    while ( my $dist = $resultset->next ) {
+        if ( ! exists $dist->resources->{repository}->{url} ) {
+            warn 'No repo found for ' . $dist->distribution;
+            next;
+        }
+        push @repositories, $dist->resources->{repository}->{url};
+    }
+
+The MetaCPAN API has various interesting endpoints, but in this case we just
+care about the /release endpoint.  You can think of it this way:  an author
+has_many releases and a release has_many modules.  In very general terms, if
+you don't know what which release a module belongs to, you can look it up on
+MetaCPAN, click on the "release" link (which is between the author name and the
+module name) and take the portion of the url that comes after /release.  For
+example, a search for HTML::Restrict would lead you to this release page
+/release/HTML-Restrict.
+
+Looking at $query, we're building a query using MetaCPAN::Client's query DSL
+(domain specific language).  This is a wrapper around Elasticsearch's DSL.  In
+SQL terms "all" equals "AND" and "either" equals "OR".  If you're familiar with
+DBIx::Class or SQL::Abstract, the MetaCPAN::Client API should seem somewhat
+familiar.
+
+The first thing we care about is the "status" field.  The status field can have
+only one of three values: "latest", "cpan" or "backpan".  "latest" indicates
+that this is the last authorized version of this document to be uploaded to
+CPAN.  The "cpan" means that it's not the last authorized version but that the
+file does still exist on CPAN.  "backpan" means that the document has been
+deleted from CPAN, but does exist in BackPAN, which is basically a collection
+of every file which has ever been uploaded to CPAN.
+
+After building the query, we'll constrain it with a second HashRef.  In this
+case we'll use "fields" and "size" constraints.  In SQL terms you can think of
+"fields" as a group of columns you want to SELECT and "size" as a kind of LIMIT
+statement.  Size is not a upper limit on all returned results, but rather a
+limit on the number of results which MetaCPAN::API fetches with each request as
+it iterates over your results.
+
+Once we have all of this set up, we can ask for a $resultset object to iterate
+over the API results.  The resources() method returns a HashRef which may or
+may not contain a repository url.  If it doesn't exist, we'll warn.  It
+shouldn't be fatal, since it's perfectly valid for a distributions metadata not
+to contain a reposistory URL.
+
+So, now we've got a list of repositories.  How can we go about putting them
+into naughty and nice bins?  Since this metric is purely based on Github merge
+activity, we'll have to use the Github API for this.
+
+=head1 using Pithub
+
+Pithub is very well documented and easy to get started with, but there are a
+couple of things which may save you a bit of time.  First, the Github API does
+not require authentication if you're only making a small number of requests.
+So, if you're just messing around, you can create a new Pithub object without a
+Github username and token.  The current limit for unauthenticated requests is
+60/hour.  So, if you haven't created a token, use your requests wisely.  I've
+omitted the token and username here for brevity.
+
+    use Pithub::Pullrequests;
+
+    my $pithub = Pithub::PullRequests->new;
+
+=head2 Parsing a Github URL
+
+Not every repository URL in the MetaCPAN API will belong to Github and not all
+URLs may be well formed.  So, we'll just do our best.  A Github URL looks
+something like:
+
+    git@github.com:user/repository-name.git
+    https://github.com/user/repository-name.git
+
+The parser is very simple.
+
+    sub parse_github_url {
+        my $url = shift;
+
+        my @parts = split qr{[/:]}, $url;
+
+        my $repo = pop @parts;
+        my $user = pop @parts;
+        $repo =~ s{\.git}{};
+
+        return ( $user, $repo );
+    }
+
+I've opted for a split here rather than a full-on regex because it's more
+readable and there's less that can go wrong.  Well, that's not really true.
+split() accepts a regex as its first argument, so I am still using a regex, but
+I've opted to take the easy route and not worry about captures, greediness etc.
+
+Now, let's try to get more information about the repository.
+
+    foreach my $repository ( @repositories ) {
+        my ( $user, $repo ) = parse_github_url( $repository );
+        unless ( $user && $repo ) {
+            warn "could not parse $repository";
+            next;
+        }
+
+        my @pull_requests = get_pull_requests( $user, $repo );
+    }
+
+In this case we'll warn if the the URL cannot be parsed correctly.  There's no
+reason for an exception here since non-Github URLs or malformed URLs are quite
+possibly things we'll encounter.  They're outside of our control.  We accept
+that they exist, but there's nothing we can do to change them.
+
+=head1 Getting Pull Request data
+
+Let's have a look at the get_pull_requests() sub which was referred to above.
+It's quite simple as well.
+
+    sub get_pull_requests {
+        my ( $user, $repo ) = @_;
+
+        my $result = $pithub->list(
+            user   => $user,
+            repo   => $repo,
+            params => { per_page => 100, state => 'all' },
+        );
+
+        my @pulls;
+
+        while ( my $row = $result->next ) {
+            push @pulls,
+                Github::MergeVelocity::PullRequest->new(
+                created_at => $row->{created_at},
+                $row->{closed_at} ? ( closed_at => $row->{closed_at} ) : (),
+                $row->{merged_at} ? ( merged_at => $row->{merged_at} ) : (),
+                );
+        }
+        return \@pulls;
+    }
+
+There are two important things to note here.  First off, the default state of
+the Github API is to list open pull requests.  We, however, care about all
+states (open, closed and merged).  So we need to do this in the params HashRef
+which is passed to the list() method by setting state => "all".  We also want
+to get the maximum number of results per request, so we'll set per_page => 100.
+For our purposes, looking at the last 100 pull requests is "good enough", so we
+won't bother with pagination.
+
+Pithub's list() method returns a handy iterator which we can use to fetch all
+of the results.  All we need for our naughty/nice categorizer are the dates
+when a pull request was created, closed or merged.  (It's helpful to note that
+"closed" in this sense means "closed without being merged").
+
+We'll touch on Github::MergeVelocity::PullRequest below, but you can see that
+this is an object which required pull request data.  Since the only guaranteed
+timestamp that we care about is created_at, we use ternaries to decide whether
+to pass the closed_at and merged_at timestamps to the object's constructor.
+
+=head1 How old is this pull request?
+
+The point of our exercise is to categorize a repository as naughty or nice.
+Using the created_at, closed_at and merged_at data points will get us to the
+right place.  Every pull request will have a created_at date, which is the date
+we'll begin calculating its age at.  After some a first pass at the code and
+some thought, I decided that a granularity of days would be ideal for what
+we're trying to do here.  So, all ages will be in days only.  If a pull request
+was open less than 24 hours, we'll give it an age of 0.  If it was merged after
+400 days, its age will be 400.  You get the idea.  This makes our math simpler
+and also has the side effect of rewarding repositories with a history of merges
+which happen in less than 24 hours.
+
+Here's a sample of how we could go about calculating the age of the pull
+request.  For our purposes, let's call the metric of how quickly a pull request
+is merged "Merge Velocity."
+
+    package Github::MergeVelocity::PullRequest;
+
+    use Moose;
+
+    use DateTime;
+    use Github::MergeVelocity::Types qw( Datetime );
+    use MooseX::StrictConstructor;
+    use Types::Standard qw( Int Str );
+
+    has age => (
+        is       => 'ro',
+        init_arg => undef,
+        isa      => Int,
+        lazy     => 1,
+        builder  => '_build_age',
+    );
+
+    has closed_at => (
+        is        => 'ro',
+        isa       => Datetime,
+        predicate => 'is_closed',
+        coerce    => 1,
+    );
+
+    has created_at => (
+        is        => 'ro',
+        isa       => Datetime,
+        predicate => 'has_created_at',
+        coerce    => 1,
+        required  => 1,
+    );
+
+    has merged_at => (
+        is        => 'ro',
+        isa       => Datetime,
+        predicate => 'is_merged',
+        coerce    => 1,
+    );
+
+    has state => (
+        is       => 'ro',
+        isa      => Str,
+        init_arg => undef,
+        lazy     => 1,
+        builder  => '_build_state',
+    );
+
+    sub is_open {
+        my $self = shift;
+        return $self->state eq 'open';
+    }
+
+    sub _build_age {
+        my $self = shift;
+
+        my $upper_bound
+            = $self->is_merged ? $self->merged_at
+            : $self->is_closed ? $self->closed_at
+            :                    DateTime->now;
+
+        return $upper_bound->delta_days( $self->created_at )->days;
+    }
+
+    sub _build_state {
+        my $self = shift;
+        return
+              $self->is_merged ? 'merged'
+            : $self->is_closed ? 'closed'
+            :                    'open';
+    }
+
+    __PACKAGE__->meta->make_immutable;
+    1;
+
+You can see that we've decided to create a new object for each pull request.
+We don't need an object for this simple calculation, but it has a few benefits.
+Firstly, it moves a couple of bits of related logic out of the main code.
+Secondly, it makes the Github data a bit easier to debug.  This is because the
+Pithub result rows are quite huge and dumping them to the screen makes for a
+lot to read.  If I can dump just the columns I care about (by dumping this
+object), that makes my life easier.  Thirdly, when we aggregate the pull
+request data later on, we can use method names rather than hash keys, which
+makes finding errors much easier to track, since a misspelled or missing method
+name will throw an immediate exception.  Fourthly, since we're using Moose, we
+take advantage of coercions to simplify the DateTime handling.
+
+For the type checking and DateTime coercion, I've opted to use Type::Tiny.
+This is mostly because I hadn't had a chance to play with Type::Tiny and I
+thought this would be a good time to do so.  You'll see it was just a few lines
+of code:
+
+    package Github::MergeVelocity::Types;
+
+    use strict;
+    use warnings;
+
+    use DateTime::Format::ISO8601;
+    use Type::Library -base, -declare => ( 'Datetime' );
+    use Types::Standard -types;
+    use Type::Utils;
+
+    class_type Datetime, { class => "DateTime" };
+
+    coerce Datetime, from Str,
+        via { DateTime::Format::ISO8601->parse_datetime( $_ ) };
+    1;
+
+Coercion is a fancy way of saying "if X is in format Y rather than Z, please
+convert it to Z on demand".  Timestamps from Github arrive in the format of
+"2012-03-26T21:37:25Z", which L<DateTime::Format::ISO8601> handles nicely.
+It's true that I could have just used L<MooseX::Types::DateTime>.  This would
+have saved me from creating my own coercion.  Dave Rolsky pointed this out to
+me after I'd already written the L<Type::Tiny> code, but I decided to leave it
+as is, since this is a demonstration of how easily this can be done with
+L<Type::Tiny>.
+
+So, back to Github::MergeVelocity::PullRequest.  The important bits of logic
+are in the builders for the age and state attributes.  _build_state() uses a
+nested ternary statement to determine the pull request's current state.
+_build_age() tells us how old (in days) a pull request is.  We know when the
+pull request was created, so we always have a starting point.  If it's merged
+or closed, we also have an ending point.  If it's still open, we'll use the
+current time.  DateTime's handy delta_days() method gives us the difference, in
+days, between two dates and it also "does the right thing" with leap years,
+month boundaries etc.
+
+Now we've got everything we need.  All that's left is to aggregate the data and
+to find a way of presenting it nicely.
+
+=head1 Making a list and checking it twice
+
+    sub analyze_repo {
+        my $self = shift;
+        my $user = shift;
+        my $repo = shift;
+
+        my $pulls = get_pull_requests( $user, $repo );
+        my $total = $pulls ? scalar @{$pulls} : 0;
+
+        my %summary = (
+            closed     => 0,
+            merged     => 0,
+            open       => 0,
+            repo       => $repo,
+            closed_age => 0,
+            merged_age => 0,
+            open_age   => 0,
+            total      => $total,
+            user       => $user,
+        );
+
+        foreach my $pr ( @{$pulls} ) {
+            $summary{ $pr->state }++;
+            $summary{ $pr->state . '_age' } += $pr->age;
+        }
+
+        foreach my $state ( 'closed', 'merged', 'open' ) {
+            my $percent = $total ? $summary{$state} / $total : 0;
+            $summary{ 'percentage_' . $state } = $percent;
+        }
+
+        $summary{is_nice}
+            = ( $summary{percentage_merged} >= .75 && $summary{merged_age} < 40 )
+            || ( $summary{merged_age} < 30
+            && $summary{closed_age} < 30
+            && $summary{percentage_open} <= .25 )
+            || ( $summary{open_age} < 365
+            && $summary{percentage_open} < .15 );
+
+        return \%summary;
+    }
+
+We could have used an object for this summary as well, rather than all of this
+messing about with hash keys, but Christmas is approaching far too quickly for
+another code refactor.  Given a $user and $repo which we can extract from a
+Github repo name, this subroutine will get the pull request data and summarize
+it for us.  As we iterate over the Github::MergeVelocity::PullRequest objects,
+we total the number of requests in each state, because we'll need these numbers
+in order to calculate averages later.
+
+This is also a good time to add up the ages of all of the requests, since we'll
+also need this to calculate averages.  After everything is summed and averaged,
+we run the numbers through our naughty/nice algorithm.
+
+=head1 We're gonna find out who's naughty and nice
+
+So what is good behaviour as far as merging code goes?  From where I sit it
+comes down to a) merging appropriate pull requests in a timely manner and b)
+closing inappropriate pull requests in a timely manner.  What constitutes
+timely is up for debate, but personally I'm quite tickled when I see a pull
+request merged on the day it was sent or even within a few days.  If it's
+merged within 4-6 weeks, that's usually pretty decent.  Once it gets beyond
+that, I either wonder if my time was wasted or I've already forgotten that I
+even sent the pull request.
+
+This all comes with the usual caveats about open source.  Sometimes you can
+merge code quickly and sometimes you can't.  Sometimes branch B cannot be
+merged because it's being blocked by work that needs to be completed in branch
+A.  Sometimes life happens and a repository owner (or organization) just can't
+get to your code.  For all the times we get frustrated by slow (or no)
+responses to our gifts of code, we should keep in mind that life does happen
+and that our emergencies aren't always someone else's emergency.  Unless this
+fixes a bug that impacts 911 dispatches or the auto-pilot software in a
+commercial airliner, you may not actually be dealing with an emergency.  Just
+something to keep in mind.  :)
+
+Having said all of this, after running the numbers on a bunch of different
+repositories, I've found that a 2 out of 3 algorithm seems to work best.  For
+instance, it's common to find repositories that have quick merges and quick
+closes, but a long lived open pull requests.  Repositories with no long lived
+open pull requests and quick merges may have been slow to close requests which
+were never merged.  There are reasonable scenarios to account for these things,
+so we'll try to be flexible before calling out naughty behaviour.
+
+XXX - brush up the naughtiness algorithm after feedback from NEILB
+
+=head1 Now, let's see what we have
+
+    use CLDR::Number::Format::Percent;
+    use Text::SimpleTable::AutoWidth;
+    use Unicode::Char;
+
+    sub print_report {
+        my $self = shift;
+
+        # list of HashRefs returned by analyze_repo()
+        my $summaries = shift;
+
+        my $formatter = CLDR::Number::Format::Percent->new( locale => 'en' );
+        my $table = Text::SimpleTable::AutoWidth->new;
+        my $char = Unicode::Char->new;
+
+        my @cols  = (
+            q{},      'user',           'repo', 'PRs',
+            'merged', 'avg merge days', 'open', 'avg open days',
+            'closed', 'avg close days'
+        );
+        $table->captions( \@cols );
+
+        foreach my $row ( @{$summaries} ) {
+            $table->row(
+                $row->{is_nice} ? $char->father_christmas : $char->warning_sign,
+                $row->{user},
+                $row->{repo},
+                $row->{total},
+                $formatter->format( $row->{percentage_merged} ),
+                $row->{merged_age},
+                $formatter->format( $row->{percentage_open} ),
+                $row->{open_age},
+                $formatter->format( $row->{percentage_closed} ),
+                $row->{closed_age},
+            );
+        }
+
+        binmode( STDOUT, ':utf8' );
+        print $table->draw;
+        return;
+    }
+
+After we've summarized all of our repositories, we'll pass an ArrayRef of the
+summaries to print_report().  This uses Text::SimpleTable::AutoWidth to create
+pretty text tables.  To make it even more pleasing to the eye we've chosen to
+add some unicode symbols.  A Santa face for nice and a warning sign for
+naughty.  We also remember to set binmode in order to avoid any warnings about
+wide characters.  After that, we draw the table and we're done!  Let's see what
+it might look like.
+
+=head1 Who gets a lump of coal?
+
+    .----+------------+-------------------+-----+--------+----------------+------+---------------+--------+----------------.
+    |    | user       | repo              | PRs | merged | avg merge days | open | avg open days | closed | avg close days |
+    +----+------------+-------------------+-----+--------+----------------+------+---------------+--------+----------------+
+    | 🎅  | autarch    | DateTime.pm       | 5   | 20%    | 6              | 20%  | 4             | 60%    | 7              |
+    | 🎅  | oalders    | html-restrict     | 13  | 77%    | 12             | 0%   | 0             | 23%    | 5              |
+    | 🎅  | xslate     | p5-Text-Xslate    | 44  | 82%    | 18             | 2%   | 6             | 16%    | 10             |
+    | ⚠  | neilbowers | PAUSE-Permissions | 2   | 50%    | 0              | 50%  | 3             | 0%     | 0              |
+    '----+------------+-------------------+-----+--------+----------------+------+---------------+--------+----------------'
+
+=
+=cut
