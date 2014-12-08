@@ -198,7 +198,7 @@ sub _build_repositories {
     my $resultset = $self->_metacpan_client->release( $query, $params );
     my @repositories;
     while ( my $dist = $resultset->next ) {
-        if ( !$dist->resources->{repository}->{url} ) {
+        if ( !exists $dist->resources->{repository}->{url} ) {
             warn 'No repo found for ' . $dist->distribution;
             next;
         }
@@ -312,7 +312,7 @@ sub _parse_github_url {
     my $self = shift;
     my $url  = shift;
 
-    my @parts = split '/', $url;
+    my @parts = split qr{[/:]}, $url;
 
     my $repo = pop @parts;
     my $user = pop @parts;
@@ -323,4 +323,3 @@ sub _parse_github_url {
 
 __PACKAGE__->meta->make_immutable();
 1;
-
