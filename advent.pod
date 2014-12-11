@@ -1,3 +1,7 @@
+Title: Is this Github Repository Naughty or Nice?
+Topic: Pithub
+Author: Olaf Alders <olaf@wundersolutions.com>
+
 =pod
 
 =encoding utf-8
@@ -12,20 +16,23 @@ spirit of the season and sometimes you just want to give the gift of code.  If
 you're participating in 24pullrequests.com or are even just looking for
 something to contribute to, you'll want to know that your gift of love/code
 will find a happy home.  You'll want to take a few factors into account before
-deciding how to spend your valuable free time.  One important consideration is,
-"will this code get merged or is it destined to languish forlorn as a pull
-request?"  Nobody can predict the future, but there are some indicators (like
-recent project activity), which you can take into account.  The Github API can
-be a valuable tool in automating this process.  Today we're going to look not
-at recent commits, but recent merge activity.  We'll accept the names of Perl
-distributions, look them up on MetaCPAN to find their official repository
-locations and then get up to the last 100 pull requests.  Once we have the pull
-request data we'll try to figure out how likely it is that a pull request will
-get merged in some (arbitrary) reasonable amount of time.  If your chances look
-bad, we'll call the distribution naughty.  If it's a paradise for code merges
-or if we just don't have enough data points to make a decision, it's nice.
+deciding how to spend your valuable free time.
 
-=head1 Getting the repository URL for a CPAN distribution
+One important consideration is, "will this code get merged or is it destined to
+languish forlorn as a pull request?"  Nobody can predict the future, but there
+are some indicators (like recent project activity), which you can take into
+account.  Armed with access to the Github API, we are going to try to answer
+this question by looking at recent merge activity.
+
+Given the names of an arbitrary number of Perl distributions, we'll look them
+up on MetaCPAN to find their official repository locations and then get up to
+the last 100 pull requests.  Once we have the pull request data we'll try to
+figure out how likely it is that a pull request will get merged in some
+(arbitrary) reasonable amount of time.  If our chances look bad, we'll call
+the distribution naughty.  If it's a paradise for code merges or if we just
+don't have enough data points to make a decision, it's nice.
+
+=head2 Getting the repository URL for a CPAN distribution
 
 First off, let's work on getting the Github repository url for an arbitrary
 CPAN distribution.
@@ -61,34 +68,34 @@ CPAN distribution.
     }
 
 The MetaCPAN API has various interesting endpoints, but in this case we just
-care about the /release endpoint.  You can think of it this way:  an author
+care about the /release endpoint.  Let's think of it this way:  an author
 has_many releases and a release has_many modules.  In very general terms, if
 you don't know what which release a module belongs to, you can look it up on
-MetaCPAN, click on the "release" link (which is between the author name and the
-module name) and take the portion of the url that comes after /release.  For
-example, a search for HTML::Restrict would lead you to this release page
+MetaCPAN, click on the C<< release >> link (which is between the author name
+and the module name) and take the portion of the url that comes after /release.
+For example, a search for L<HTML::Restrict> would lead you to this release page
 /release/HTML-Restrict.
 
 Looking at $query, we're building a query using MetaCPAN::Client's query DSL
 (domain specific language).  This is a wrapper around Elasticsearch's DSL.  In
-SQL terms "all" equals "AND" and "either" equals "OR".  If you're familiar with
-DBIx::Class or SQL::Abstract, the MetaCPAN::Client API should seem somewhat
-familiar.
+SQL terms C<< all >> equals C<< AND >> and C<< either >> equals C<< OR >>.  If
+you're familiar with L<DBIx::Class> or L<SQL::Abstract>, the
+L<MetaCPAN::Client> API should seem somewhat familiar.
 
-The first thing we care about is the "status" field.  The status field can have
-only one of three values: "latest", "cpan" or "backpan".  "latest" indicates
+The first thing we care about is the C<< status >> field.  The status field can have
+only one of three values: C<< latest >>, C<< cpan >> or C<< backpan >>.  C<< latest >> indicates
 that this is the last authorized version of this document to be uploaded to
-CPAN.  The "cpan" means that it's not the last authorized version but that the
-file does still exist on CPAN.  "backpan" means that the document has been
+CPAN.  The C<< cpan >> means that it's not the last authorized version but that the
+file does still exist on CPAN.  C<< backpan >> means that the document has been
 deleted from CPAN, but does exist in BackPAN, which is basically a collection
 of every file which has ever been uploaded to CPAN.
 
 After building the query, we'll constrain it with a second HashRef.  In this
-case we'll use "fields" and "size" constraints.  In SQL terms you can think of
-"fields" as a group of columns you want to SELECT and "size" as a kind of LIMIT
+case we'll use C<< fields >> and C<< size >> constraints.  In SQL terms let's think of
+C<< fields >> as a group of columns we want to SELECT and C<< size >> as a kind of LIMIT
 statement.  Size is not a upper limit on all returned results, but rather a
-limit on the number of results which MetaCPAN::API fetches with each request as
-it iterates over your results.
+limit on the number of results which L<MetaCPAN::API> fetches with each request as
+it iterates over our results.
 
 Once we have all of this set up, we can ask for a $resultset object to iterate
 over the API results.  The resources() method returns a HashRef which may or
@@ -100,15 +107,15 @@ So, now we've got a list of repositories.  How can we go about putting them
 into naughty and nice bins?  Since this metric is purely based on Github merge
 activity, we'll have to use the Github API for this.
 
-=head1 using Pithub
+=head2 using Pithub
 
 Pithub is very well documented and easy to get started with, but there are a
-couple of things which may save you a bit of time.  First, the Github API does
-not require authentication if you're only making a small number of requests.
-So, if you're just messing around, you can create a new Pithub object without a
+couple of things which may save us a bit of time.  First, the Github API does
+not require authentication if we're only making a small number of requests.
+So, if we're just messing around, we can create a new Pithub object without a
 Github username and token.  The current limit for unauthenticated requests is
-60/hour.  So, if you haven't created a token, use your requests wisely.  I've
-omitted the token and username here for brevity.
+60/hour.  So, if we haven't yet created a token, we'll have to use our requests
+wisely.  I've omitted the token and username here for brevity.
 
     use Pithub::Pullrequests;
 
@@ -159,7 +166,7 @@ reason for an exception here since non-Github URLs or malformed URLs are quite
 possibly things we'll encounter.  They're outside of our control.  We accept
 that they exist, but there's nothing we can do to change them.
 
-=head1 Getting Pull Request data
+=head2 Getting Pull Request data
 
 Let's have a look at the get_pull_requests() sub which was referred to above.
 It's quite simple as well.
@@ -189,7 +196,7 @@ It's quite simple as well.
 There are two important things to note here.  First off, the default state of
 the Github API is to list open pull requests.  We, however, care about all
 states (open, closed and merged).  So we need to do this in the params HashRef
-which is passed to the list() method by setting state => "all".  We also want
+which is passed to the list() method by setting C<< state => 'all' >>.  We also want
 to get the maximum number of results per request, so we'll set per_page => 100.
 For our purposes, looking at the last 100 pull requests is "good enough", so we
 won't bother with pagination.
@@ -197,14 +204,14 @@ won't bother with pagination.
 Pithub's list() method returns a handy iterator which we can use to fetch all
 of the results.  All we need for our naughty/nice categorizer are the dates
 when a pull request was created, closed or merged.  (It's helpful to note that
-"closed" in this sense means "closed without being merged").
+C<< closed >> in this sense means "closed without being merged").
 
 We'll touch on Github::MergeVelocity::PullRequest below, but you can see that
 this is an object which required pull request data.  Since the only guaranteed
 timestamp that we care about is created_at, we use ternaries to decide whether
 to pass the closed_at and merged_at timestamps to the object's constructor.
 
-=head1 How old is this pull request?
+=head2 How old is this pull request?
 
 The point of our exercise is to categorize a repository as naughty or nice.
 Using the created_at, closed_at and merged_at data points will get us to the
@@ -307,8 +314,8 @@ makes finding errors much easier to track, since a misspelled or missing method
 name will throw an immediate exception.  Fourthly, since we're using Moose, we
 take advantage of coercions to simplify the DateTime handling.
 
-For the type checking and DateTime coercion, I've opted to use Type::Tiny.
-This is mostly because I hadn't had a chance to play with Type::Tiny and I
+For the type checking and L<DateTime> coercion, I've opted to use L<Type::Tiny>.
+This is mostly because I hadn't had a chance to play with L<Type::Tiny> and I
 thought this would be a good time to do so.  You'll see it was just a few lines
 of code:
 
@@ -350,7 +357,7 @@ month boundaries etc.
 Now we've got everything we need.  All that's left is to aggregate the data and
 to find a way of presenting it nicely.
 
-=head1 Making a list and checking it twice
+=head2 Making a list and checking it twice
 
     sub analyze_repo {
         my $self = shift;
@@ -405,7 +412,7 @@ This is also a good time to add up the ages of all of the requests, since we'll
 also need this to calculate averages.  After everything is summed and averaged,
 we run the numbers through our naughty/nice algorithm.
 
-=head1 We're gonna find out who's naughty and nice
+=head2 We're gonna find out who's naughty and nice
 
 So what is good behaviour as far as merging code goes?  From where I sit it
 comes down to a) merging appropriate pull requests in a timely manner and b)
@@ -437,7 +444,7 @@ so we'll try to be flexible before calling out naughty behaviour.
 
 XXX - brush up the naughtiness algorithm after feedback from NEILB
 
-=head1 Now, let's see what we have
+=head2 Now, let's see what we have
 
     use CLDR::Number::Format::Percent;
     use Text::SimpleTable::AutoWidth;
@@ -481,14 +488,14 @@ XXX - brush up the naughtiness algorithm after feedback from NEILB
     }
 
 After we've summarized all of our repositories, we'll pass an ArrayRef of the
-summaries to print_report().  This uses Text::SimpleTable::AutoWidth to create
+summaries to print_report().  This uses L<Text::SimpleTable::AutoWidth> to create
 pretty text tables.  To make it even more pleasing to the eye we've chosen to
 add some unicode symbols.  A Santa face for nice and a warning sign for
 naughty.  We also remember to set binmode in order to avoid any warnings about
 wide characters.  After that, we draw the table and we're done!  Let's see what
 it might look like.
 
-=head1 Who gets a lump of coal?
+=head2 Who gets a lump of coal?
 
     .----+------------+-------------------+-----+--------+----------------+------+---------------+--------+----------------.
     |    | user       | repo              | PRs | merged | avg merge days | open | avg open days | closed | avg close days |
