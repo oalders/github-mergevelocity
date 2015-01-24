@@ -140,7 +140,7 @@ sub _build_mech {
         $mech = WWW::Mechanize->new;
     }
 
-    debug_ua( $mech ) if $self->debug_useragent;
+    debug_ua($mech) if $self->debug_useragent;
     return $mech;
 }
 
@@ -152,7 +152,7 @@ sub _build_metacpan_client {
         $args{ua} = HTTP::Tiny::Mech->new( mechua => $self->_mech );
     }
 
-    return MetaCPAN::Client->new( %args );
+    return MetaCPAN::Client->new(%args);
 }
 
 sub _build_report {
@@ -161,7 +161,7 @@ sub _build_report {
     my @report;
 
     foreach my $repo_url ( $self->_all_repositories ) {
-        my ( $user, $repo ) = $self->_parse_github_url( $repo_url );
+        my ( $user, $repo ) = $self->_parse_github_url($repo_url);
 
         if ( !( $user && $repo ) ) {
             warn "Could not parse $repo_url";
