@@ -1,9 +1,9 @@
-package Github::MergeVelocity::PullRequest;
+package GitHub::MergeVelocity::PullRequest;
 
 use Moose;
 
 use DateTime;
-use Github::MergeVelocity::Types qw( Datetime );
+use GitHub::MergeVelocity::Types qw( Datetime );
 use MooseX::StrictConstructor;
 use Types::Standard qw( Int Str );
 
@@ -74,4 +74,4 @@ __PACKAGE__->meta->make_immutable;
 
 __END__
 
-# ABSTRACT: Encapsulate select data about Github pull requests
+# ABSTRACT: Encapsulate select data about GitHub pull requests

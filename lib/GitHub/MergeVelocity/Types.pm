@@ -1,4 +1,4 @@
-package Github::MergeVelocity::Types;
+package GitHub::MergeVelocity::Types;
 
 use strict;
 use warnings;
@@ -16,4 +16,4 @@ coerce Datetime, from Str,
 
 __END__
 
-# ABSTRACT: Custom types for use by Github::MergeVelocity modules
+# ABSTRACT: Custom types for use by GitHub::MergeVelocity modules

@@ -1,4 +1,4 @@
-package Github::MergeVelocity;
+package GitHub::MergeVelocity;
 
 use strict;
 use warnings;
@@ -7,7 +7,7 @@ use feature qw( say );
 use CHI;
 use CLDR::Number::Format::Percent;
 use Data::Printer;
-use Github::MergeVelocity::PullRequest;
+use GitHub::MergeVelocity::PullRequest;
 use HTTP::Tiny::Mech;
 use LWP::ConsoleLogger::Easy qw( debug_ua );
 use Math::Round qw( round );
@@ -32,7 +32,7 @@ has debug_useragent => (
 my $token_help = <<'EOF';
 Please see
 https://help.github.com/articles/creating-an-access-token-for-command-line-use
-for instructions on how to get your own Github access token.
+for instructions on how to get your own GitHub access token.
 EOF
 
 has cache_requests => (
@@ -62,7 +62,7 @@ has github_user => (
     is            => 'ro',
     isa           => Str,
     required      => 0,
-    documentation => 'The username of your Github account',
+    documentation => 'The username of your GitHub account',
 );
 
 has report => (
@@ -280,7 +280,7 @@ sub _get_pull_requests {
         # GunioRobot seems to create pull requests that clean up whitespace
         next if !$row->{user} || $row->{user}->{login} eq 'GunioRobot';
 
-        my $pull_request = Github::MergeVelocity::PullRequest->new(
+        my $pull_request = GitHub::MergeVelocity::PullRequest->new(
             created_at => $row->{created_at},
             $row->{closed_at} ? ( closed_at => $row->{closed_at} ) : (),
             $row->{merged_at} ? ( merged_at => $row->{merged_at} ) : (),
