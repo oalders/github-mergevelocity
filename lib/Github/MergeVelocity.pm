@@ -75,14 +75,6 @@ has report => (
     builder  => '_build_report',
 );
 
-has _char => (
-    is      => 'ro',
-    isa     => 'Unicode::Char',
-    handles => { _naughty => 'warning_sign', _nice => 'father_christmas', },
-    lazy    => 1,
-    default => sub { Unicode::Char->new },
-);
-
 has _github_client => (
     is      => 'ro',
     isa     => 'Pithub::PullRequests',
@@ -220,7 +212,6 @@ sub print_report {
 
     foreach my $row ( $self->_report_rows ) {
         $table->row(
-            $row->{is_nice} ? $self->_nice : $self->_naughty,
             $row->{user},
             $row->{repo},
             $row->{total},
@@ -267,14 +258,6 @@ sub _analyze_repo {
         my $percent = $total ? $summary{$state} / $total : 0;
         $summary{ 'percentage_' . $state } = $percent;
     }
-
-    $summary{is_nice}
-        = ( $summary{percentage_merged} >= .75 && $summary{merged_age} < 40 )
-        || ( $summary{merged_age} < 30
-        && $summary{closed_age} < 30
-        && $summary{percentage_open} <= .25 )
-        || ( $summary{open_age} < 365
-        && $summary{percentage_open} < .15 );
 
     return \%summary;
 }
