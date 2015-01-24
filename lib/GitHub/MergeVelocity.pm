@@ -204,9 +204,9 @@ sub print_report {
 
     my $table = Text::SimpleTable::AutoWidth->new;
     my @cols  = (
-        q{},      'user',           'repo', 'PRs',
-        'merged', 'avg merge days', 'open', 'avg open days',
-        'closed', 'avg close days'
+        'user',           'repo', 'PRs',           'merged',
+        'avg merge days', 'open', 'avg open days', 'closed',
+        'avg close days'
     );
     $table->captions( \@cols );
 
@@ -245,7 +245,9 @@ sub _analyze_repo {
         closed_age => 0,
         merged_age => 0,
         open_age   => 0,
+        repo       => $repo,
         total      => $total,
+        github_url => sprintf( 'https://github.com/%s/%s', $user, $repo ),
         user       => $user,
     );
 
