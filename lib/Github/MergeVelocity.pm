@@ -306,3 +306,11 @@ sub _parse_github_url {
 
 __PACKAGE__->meta->make_immutable();
 1;
+
+__END__
+
+# ABSTRACT: Determine how quickly your pull request might get merged
+
+=pod
+
+=cut

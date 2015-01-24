@@ -71,3 +71,7 @@ sub _build_state {
 
 __PACKAGE__->meta->make_immutable;
 1;
+
+__END__
+
+# ABSTRACT: Encapsulate select data about Github pull requests
