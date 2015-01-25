@@ -1,20 +1,23 @@
-Determine the merge velocity of a Perl distribution.
+# SYNOPSIS
 
-Are you planning to send a pull request for a CPAN module?  This app will help
-you determine how likely it is that your pull request will be merged within a
-"reasonable" amount of time.
+    use strict;
+    use warnings;
 
-    git clone https://github.com/oalders/github-mergevelocity
-    cd github-mergevelocity
+    use GitHub::MergeVelocity;
 
-    # using carton
-    carton install
-    carton exec -- bin/velocity.pl --dist HTTP-BrowserDetect --dist Plack
+    my $velocity = GitHub::MergeVelocity->new(
+        url => [
+            'https://github.com/neilbowers/PAUSE-Permissions',
+            'https://github.com/oalders/html-restrict',
+        ]
+    );
 
-    # without carton
-    cpanm --installdeps .
-    perl bin/velocity.pl --dist HTTP-BrowserDetect --dist Plack
+    my $report = $velocity->report;
 
-If you want to run a lot of queries, you'll need a Github token and username.  For help:
+    $velocity->print_report; # prints a tabular report
 
-    carton exec -- bin/velocity.pl
+# CAVEATS
+
+This module cannot (yet) distinguish between pull requests which were closed
+because they were rejected and pull requests which were closed because the
+patches were applied outside of GitHub's merge mechanism.
