@@ -6,19 +6,14 @@ use feature qw( say );
 
 use CHI;
 use CLDR::Number::Format::Percent;
-use Data::Printer;
-use GitHub::MergeVelocity::PullRequest;
-use HTTP::Tiny::Mech;
+use GitHub::MergeVelocity::Repository;
 use LWP::ConsoleLogger::Easy qw( debug_ua );
-use Math::Round qw( round );
-use MetaCPAN::Client;
 use Moose;
 use MooseX::Getopt::Dashes;
 use MooseX::StrictConstructor;
 use Pithub::PullRequests;
 use Text::SimpleTable::AutoWidth;
-use Types::Standard qw( ArrayRef Bool Str );
-use Unicode::Char;
+use Types::Standard qw( ArrayRef Bool HashRef Str );
 use WWW::Mechanize::Cached;
 
 with 'MooseX::Getopt::Dashes';
@@ -41,16 +36,6 @@ has cache_requests => (
     documentation => 'Try to cache GET requests',
 );
 
-has dist => (
-    is       => 'ro',
-    isa      => ArrayRef,
-    traits   => ['Array'],
-    handles  => { _all_lookups => 'elements' },
-    required => 1,
-    documentation =>
-        'One or more distributions to look up. You can add multiple --dist args.',
-);
-
 has github_token => (
     is            => 'ro',
     isa           => Str,
@@ -65,12 +50,18 @@ has github_user => (
     documentation => 'The username of your GitHub account',
 );
 
-has report => (
+has url => (
     is       => 'ro',
     isa      => ArrayRef,
-    traits   => ['Array'],
+    required => 1,
+);
+
+has report => (
+    is       => 'ro',
+    isa      => HashRef,
+    traits   => ['Hash'],
     init_arg => undef,
-    handles  => { '_report_rows' => 'elements' },
+    handles  => { _repository_for_url => 'get', _report_urls => 'keys', },
     lazy     => 1,
     builder  => '_build_report',
 );
@@ -89,20 +80,13 @@ has _mech => (
     builder => '_build_mech',
 );
 
-has _metacpan_client => (
-    is      => 'ro',
-    isa     => 'MetaCPAN::Client',
-    lazy    => 1,
-    builder => '_build_metacpan_client',
-);
+has url => (
+    is     => 'ro',
+    isa    => ArrayRef,
+    traits => ['Array'],
 
-has _repositories => (
-    is      => 'ro',
-    isa     => ArrayRef,
-    traits  => ['Array'],
-    handles => { '_all_repositories' => 'elements' },
-    lazy    => 1,
-    builder => '_build_repositories',
+    #    handles => { '_all_repositories' => 'elements' },
+    required => 1,
 );
 
 has _percent_formatter => (
@@ -144,59 +128,19 @@ sub _build_mech {
     return $mech;
 }
 
-sub _build_metacpan_client {
-    my $self = shift;
-
-    my %args;
-    if ( $self->cache_requests || $self->debug_useragent ) {
-        $args{ua} = HTTP::Tiny::Mech->new( mechua => $self->_mech );
-    }
-
-    return MetaCPAN::Client->new(%args);
-}
-
 sub _build_report {
     my $self = shift;
 
-    my @report;
+    my %report;
 
-    foreach my $repo_url ( $self->_all_repositories ) {
-        my ( $user, $repo ) = $self->_parse_github_url($repo_url);
-
-        if ( !( $user && $repo ) ) {
-            warn "Could not parse $repo_url";
-            next;
-        }
-
-        my $report = $self->_analyze_repo( $user, $repo );
-        push @report, $report if $report;
+    foreach my $url ( @{ $self->url } ) {
+        my $repo = GitHub::MergeVelocity::Repository->new(
+            github_client => $self->_github_client,
+            url           => $url,
+        );
+        $report{$url} = $repo;
     }
-    return \@report;
-}
-
-sub _build_repositories {
-    my $self = shift;
-
-    my @either = map { +{ distribution => $_ } } $self->_all_lookups;
-
-    my $query
-        = { all => [ { status => 'latest' }, { either => \@either }, ] };
-
-    my $params = {
-        fields => [qw(distribution resources)],
-        size   => 250,
-    };
-
-    my $resultset = $self->_metacpan_client->release( $query, $params );
-    my @repositories;
-    while ( my $dist = $resultset->next ) {
-        if ( !exists $dist->resources->{repository}->{url} ) {
-            warn 'No repo found for ' . $dist->distribution;
-            next;
-        }
-        push @repositories, $dist->resources->{repository}->{url};
-    }
-    return \@repositories;
+    return \%report;
 }
 
 sub print_report {
@@ -210,100 +154,25 @@ sub print_report {
     );
     $table->captions( \@cols );
 
-    foreach my $row ( $self->_report_rows ) {
+    foreach my $url ( sort $self->_report_urls ) {
+        my $repository = $self->_repository_for_url($url);
+        my $report     = $repository->report;
         $table->row(
-            $row->{user},
-            $row->{repo},
-            $row->{total},
-            $self->_format_percent( $row->{percentage_merged} ),
-            $row->{merged_age},
-            $self->_format_percent( $row->{percentage_open} ),
-            $row->{open_age},
-            $self->_format_percent( $row->{percentage_closed} ),
-            $row->{closed_age},
+            $repository->user,
+            $repository->name,
+            $repository->report->pull_request_count,
+            $self->_format_percent( $report->percentage_in_state('merged') ),
+            $report->average_age_for_state('merged'),
+            $self->_format_percent( $report->percentage_in_state('open') ),
+            $report->average_age_for_state('open'),
+            $self->_format_percent( $report->percentage_in_state('closed') ),
+            $report->average_age_for_state('closed'),
         );
     }
 
     binmode( STDOUT, ':utf8' );
     print $table->draw;
     return;
-}
-
-sub _analyze_repo {
-    my $self = shift;
-    my $user = shift;
-    my $repo = shift;
-
-    my $pulls = $self->_get_pull_requests( $user, $repo );
-    my $total = $pulls ? scalar @{$pulls} : 0;
-
-    my %summary = (
-        closed     => 0,
-        merged     => 0,
-        open       => 0,
-        repo       => $repo,
-        closed_age => 0,
-        merged_age => 0,
-        open_age   => 0,
-        repo       => $repo,
-        total      => $total,
-        github_url => sprintf( 'https://github.com/%s/%s', $user, $repo ),
-        user       => $user,
-    );
-
-    foreach my $pr ( @{$pulls} ) {
-        $summary{ $pr->state }++;
-        $summary{ $pr->state . '_age' } += $pr->age;
-    }
-
-    foreach my $state ( 'closed', 'merged', 'open' ) {
-        my $percent = $total ? $summary{$state} / $total : 0;
-        $summary{ 'percentage_' . $state } = $percent;
-    }
-
-    return \%summary;
-}
-
-sub _get_pull_requests {
-    my $self = shift;
-    my $user = shift;
-    my $repo = shift;
-
-    my $result = $self->_github_client->list(
-        user   => $user,
-        repo   => $repo,
-        params => { per_page => 100, state => 'all' },
-    );
-
-    my @pulls;
-
-    while ( my $row = $result->next ) {
-
-        # GunioRobot seems to create pull requests that clean up whitespace
-        next if !$row->{user} || $row->{user}->{login} eq 'GunioRobot';
-
-        my $pull_request = GitHub::MergeVelocity::PullRequest->new(
-            created_at => $row->{created_at},
-            $row->{closed_at} ? ( closed_at => $row->{closed_at} ) : (),
-            $row->{merged_at} ? ( merged_at => $row->{merged_at} ) : (),
-        );
-
-        push @pulls, $pull_request;
-    }
-    return \@pulls;
-}
-
-sub _parse_github_url {
-    my $self = shift;
-    my $url  = shift;
-
-    my @parts = split qr{[/:]}, $url;
-
-    my $repo = pop @parts;
-    my $user = pop @parts;
-    $repo =~ s{\.git}{};
-
-    return ( $user, $repo );
 }
 
 __PACKAGE__->meta->make_immutable();

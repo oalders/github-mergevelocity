@@ -8,7 +8,10 @@ use Test::Most;
 use GitHub::MergeVelocity::PullRequest;
 
 my $created = DateTime->now->subtract( days => 10 );
-my $pr = GitHub::MergeVelocity::PullRequest->new( created_at => $created );
+my $pr = GitHub::MergeVelocity::PullRequest->new(
+    created_at => $created,
+    number     => 99,
+);
 
 is( $pr->state, 'open', 'is open' );
 

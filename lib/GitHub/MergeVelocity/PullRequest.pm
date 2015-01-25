@@ -37,6 +37,13 @@ has merged_at => (
     coerce    => 1,
 );
 
+has number => (
+    is            => 'ro',
+    isa           => Int,
+    required      => 1,
+    documentation => 'issue number in the GitHub url'
+);
+
 has state => (
     is       => 'ro',
     isa      => Str,

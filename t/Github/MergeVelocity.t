@@ -12,32 +12,11 @@ my $velo = GitHub::MergeVelocity->new(
         github_user  => $ENV{GMV_GITHUB_USER},
         )
     : (),
-    dist => [
-        'HTML-Restrict',
-
-        #'Moose',
-        'PAUSE-Permissions', 'Text-Xslate',
-
-        #'CGI',               'libwww-perl',
-        'Plack-Session', 'DateTime',
-
-        #'Dist-Zilla'
-    ],
+    url => [ 'https://github.com/oalders/html-restrict' ],
 );
 
-my @urls = (
-    'git@github.com:user/repository-name.git',
-    'https://github.com/user/repository-name.git',
-);
-
-foreach my $url (@urls) {
-    my ( $user, $repo ) = $velo->_parse_github_url($url);
-    is( $user, 'user',            'repo user' );
-    is( $repo, 'repository-name', 'repo name' );
-}
 
 ok( $velo->report, 'report' );
-diag p $velo->report;
 diag $velo->print_report;
 
 done_testing();
