@@ -8,6 +8,6 @@ use warnings;
 
 use lib 'lib';
 
-use Github::MergeVelocity;
+use GitHub::MergeVelocity;
 
-Github::MergeVelocity->new_with_options->print_report;
+GitHub::MergeVelocity->new_with_options->print_report;
