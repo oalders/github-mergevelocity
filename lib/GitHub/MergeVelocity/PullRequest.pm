@@ -58,7 +58,7 @@ sub _build_age {
         : $self->is_closed ? $self->closed_at
         :                    DateTime->now;
 
-    return $upper_bound->delta_days( $self->created_at )->days;
+    return $upper_bound->delta_days( $self->created_at )->delta_days;
 }
 
 sub _build_state {
