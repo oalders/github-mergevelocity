@@ -25,9 +25,7 @@ has debug_useragent => (
 );
 
 my $token_help = <<'EOF';
-Please see
-https://help.github.com/articles/creating-an-access-token-for-command-line-use
-for instructions on how to get your own GitHub access token.
+https://help.github.com/articles/creating-an-access-token-for-command-line-use for instructions on how to get your own GitHub access token
 EOF
 
 has cache_requests => (
