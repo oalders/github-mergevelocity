@@ -3,8 +3,8 @@ package GitHub::MergeVelocity::Repository;
 use strict;
 use warnings;
 
-use GitHub::MergeVelocity::PullRequest;
-use GitHub::MergeVelocity::Repository::Report;
+use GitHub::MergeVelocity::Repository::PullRequest;
+use GitHub::MergeVelocity::Repository::Statistics;
 use Moose;
 use MooseX::StrictConstructor;
 use Types::Standard qw( ArrayRef Bool Str );
@@ -29,7 +29,7 @@ has name => (
 
 has report => (
     is       => 'ro',
-    isa      => 'GitHub::MergeVelocity::Repository::Report',
+    isa      => 'GitHub::MergeVelocity::Repository::Statistics',
     init_arg => undef,
     lazy     => 1,
     builder  => '_build_report',
@@ -66,7 +66,7 @@ sub _build_report {
         $summary{ $pr->state . '_age' } += $pr->age;
     }
 
-    return GitHub::MergeVelocity::Repository::Report->new(%summary);
+    return GitHub::MergeVelocity::Repository::Statistics->new(%summary);
 }
 
 sub _get_pull_requests {
@@ -85,12 +85,13 @@ sub _get_pull_requests {
         # GunioRobot seems to create pull requests that clean up whitespace
         next if !$row->{user} || $row->{user}->{login} eq 'GunioRobot';
 
-        my $pull_request = GitHub::MergeVelocity::PullRequest->new(
+        my $pull_request
+            = GitHub::MergeVelocity::Repository::PullRequest->new(
             created_at => $row->{created_at},
             $row->{closed_at} ? ( closed_at => $row->{closed_at} ) : (),
             $row->{merged_at} ? ( merged_at => $row->{merged_at} ) : (),
             number => $row->{number},
-        );
+            );
 
         push @pulls, $pull_request;
     }

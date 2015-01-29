@@ -1,4 +1,4 @@
-package GitHub::MergeVelocity::Repository::Report;
+package GitHub::MergeVelocity::Repository::Statistics;
 
 use strict;
 use warnings;

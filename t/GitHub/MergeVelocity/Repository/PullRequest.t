@@ -5,11 +5,11 @@ use warnings;
 
 use Test::Most;
 
-use GitHub::MergeVelocity::PullRequest;
+use GitHub::MergeVelocity::Repository::PullRequest;
 
 {
     my $created = DateTime->now->subtract( days => 10 );
-    my $pr = GitHub::MergeVelocity::PullRequest->new(
+    my $pr = GitHub::MergeVelocity::Repository::PullRequest->new(
         created_at => $created,
         number     => 99,
     );
@@ -21,7 +21,7 @@ use GitHub::MergeVelocity::PullRequest;
 }
 
 {
-    my $pr = GitHub::MergeVelocity::PullRequest->new(
+    my $pr = GitHub::MergeVelocity::Repository::PullRequest->new(
         created_at => '2010-01-01',
         merged_at  => '2011-06-01',
         number     => 99,

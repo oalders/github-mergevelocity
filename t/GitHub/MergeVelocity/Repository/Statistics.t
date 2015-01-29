@@ -3,9 +3,9 @@ use warnings;
 
 use Test::Most;
 
-use GitHub::MergeVelocity::Repository::Report;
+use GitHub::MergeVelocity::Repository::Statistics;
 
-my $report = GitHub::MergeVelocity::Repository::Report->new(
+my $report = GitHub::MergeVelocity::Repository::Statistics->new(
     closed     => 1,
     closed_age => 10,
     open       => 1,

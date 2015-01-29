@@ -1,4 +1,4 @@
-package GitHub::MergeVelocity::PullRequest;
+package GitHub::MergeVelocity::Repository::PullRequest;
 
 use Moose;
 
