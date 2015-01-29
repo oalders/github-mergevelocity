@@ -148,9 +148,9 @@ sub print_report {
 
     my $table = Text::SimpleTable::AutoWidth->new;
     my @cols  = (
-        'user',           'repo', 'PRs',           'merged',
-        'avg merge days', 'open', 'avg open days', 'closed',
-        'avg close days'
+        'user',           'repo',   'PRs',            'merged',
+        'avg merge days', 'closed', 'avg close days', 'open',
+        'avg open days',
     );
     $table->captions( \@cols );
 
@@ -160,19 +160,27 @@ sub print_report {
         $table->row(
             $repository->user,
             $repository->name,
-            $repository->report->pull_request_count,
-            $self->_format_percent( $report->percentage_in_state('merged') ),
-            $report->average_age_for_state('merged'),
-            $self->_format_percent( $report->percentage_in_state('open') ),
-            $report->average_age_for_state('open'),
-            $self->_format_percent( $report->percentage_in_state('closed') ),
-            $report->average_age_for_state('closed'),
+            $report->pull_request_count,
+            map { $self->_columns_for_state( $report, $_ ) }
+                ( 'merged', 'closed', 'open' ),
         );
     }
 
     binmode( STDOUT, ':utf8' );
     print $table->draw;
     return;
+}
+
+sub _columns_for_state {
+    my $self   = shift;
+    my $report = shift;
+    my $state  = shift;
+    return (
+        sprintf( '%i (%s)',
+            $report->$state,
+            $self->_format_percent( $report->percentage_in_state($state) ) ),
+        $report->average_age_for_state('merged')
+    );
 }
 
 __PACKAGE__->meta->make_immutable();

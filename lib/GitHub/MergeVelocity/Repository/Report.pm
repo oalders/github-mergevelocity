@@ -49,3 +49,7 @@ sub percentage_in_state {
 
 __PACKAGE__->meta->make_immutable;
 1;
+
+__END__
+
+# ABSTRACT: Pull request statistics for a given repository
