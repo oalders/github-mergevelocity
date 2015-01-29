@@ -8,13 +8,12 @@ requires "Moose" => "0";
 requires "MooseX::Getopt::Dashes" => "0";
 requires "MooseX::StrictConstructor" => "0";
 requires "Pithub::PullRequests" => "0";
-requires "Text::SimpleTable::AutoWidth" => "0";
+requires "Text::SimpleTable::AutoWidth" => "0.09";
 requires "Type::Library" => "0";
 requires "Type::Utils" => "0";
 requires "Types::Standard" => "0";
 requires "WWW::Mechanize::Cached" => "0";
 requires "feature" => "0";
-requires "lib" => "0";
 requires "strict" => "0";
 requires "warnings" => "0";
 
