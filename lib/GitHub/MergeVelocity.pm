@@ -56,7 +56,7 @@ has url => (
     required => 1,
 );
 
-has report => (
+has _report => (
     is       => 'ro',
     isa      => HashRef,
     traits   => ['Hash'],
@@ -141,6 +141,14 @@ sub _build_report {
         $report{$url} = $repo;
     }
     return \%report;
+}
+
+# workaround for init_arg being ignored
+# https://rt.cpan.org/Ticket/Display.html?id=97849
+
+sub report {
+    my $self = shift;
+    return $self->_report;
 }
 
 sub print_report {
