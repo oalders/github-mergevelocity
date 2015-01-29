@@ -148,9 +148,9 @@ sub print_report {
 
     my $table = Text::SimpleTable::AutoWidth->new;
     my @cols  = (
-        'user',           'repo',   'PRs',            'merged',
-        'avg merge days', 'closed', 'avg close days', 'open',
-        'avg open days',
+        'user',       'repo',   'PRs',        'merged',
+        'merge days', 'closed', 'close days', 'open',
+        'open days',
     );
     $table->captions( \@cols );
 
@@ -175,11 +175,14 @@ sub _columns_for_state {
     my $self   = shift;
     my $report = shift;
     my $state  = shift;
+    my $age    = $state . '_age';
+
     return (
         sprintf( '%i (%s)',
             $report->$state,
             $self->_format_percent( $report->percentage_in_state($state) ) ),
-        $report->average_age_for_state('merged')
+        sprintf( '%i (%s/PR)',
+            $report->$age, $report->average_age_for_state($state) ),
     );
 }
 
