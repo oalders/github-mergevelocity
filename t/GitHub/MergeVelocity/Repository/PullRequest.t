@@ -28,7 +28,32 @@ use GitHub::MergeVelocity::Repository::PullRequest;
     );
 
     is( $pr->state, 'merged', 'is merged' );
-    is( $pr->age, 516 );
+    is( $pr->age,   516,      'age' );
+}
+
+{
+    my $pr = GitHub::MergeVelocity::Repository::PullRequest->new(
+        created_at => '2010-01-01',
+        merged_at  => '2010-01-01',
+        number     => 99,
+    );
+
+    is( $pr->age, 0 );
+    diag $pr->velocity;
+}
+
+{
+    my $start = DateTime->new( year => 2010, month => 1, day => 1 );
+    foreach my $days ( 0 .. 60 ) {
+        my $pr = GitHub::MergeVelocity::Repository::PullRequest->new(
+            created_at => $start,
+            merged_at  => $start->clone->add( days => $days ),
+            number     => 99,
+        );
+
+        diag 'age: ' . $pr->age;
+        diag 'velocity: ' . $pr->velocity;
+    }
 }
 
 done_testing;

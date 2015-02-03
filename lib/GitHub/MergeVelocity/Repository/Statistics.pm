@@ -7,6 +7,18 @@ use Math::Round qw( nearest round );
 use Moose;
 use Types::Standard qw( Bool Int );
 
+has average_velocity => (
+    is      => 'ro',
+    isa     => Int,
+    lazy    => 1,
+    default => sub {
+        my $self = shift;
+        return $self->pull_request_count
+            ? round( $self->total_velocity / $self->pull_request_count )
+            : 0;
+    },
+);
+
 has [ 'closed', 'open', 'merged', ] => (
     is      => 'ro',
     isa     => Int,
@@ -27,6 +39,12 @@ has pull_request_count => (
         my $self = shift;
         return $self->closed + $self->open + $self->merged;
     },
+);
+
+has total_velocity => (
+    is       => 'ro',
+    isa      => Int,
+    required => 1,
 );
 
 sub average_age_for_state {

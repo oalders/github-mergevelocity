@@ -64,6 +64,7 @@ sub _build_report {
     foreach my $pr ( @{$pulls} ) {
         $summary{ $pr->state }++;
         $summary{ $pr->state . '_age' } += $pr->age;
+        $summary{total_velocity} += $pr->velocity;
     }
 
     return GitHub::MergeVelocity::Repository::Statistics->new(%summary);

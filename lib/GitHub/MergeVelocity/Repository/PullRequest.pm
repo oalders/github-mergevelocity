@@ -4,6 +4,7 @@ use Moose;
 
 use DateTime;
 use GitHub::MergeVelocity::Types qw( Datetime );
+use Math::Round qw( round );
 use MooseX::StrictConstructor;
 use Types::Standard qw( Int Str );
 
@@ -52,6 +53,14 @@ has state => (
     builder  => '_build_state',
 );
 
+has velocity => (
+    is       => 'ro',
+    isa      => Int,
+    init_arg => undef,
+    lazy     => 1,
+    builder  => '_build_velocity',
+);
+
 sub is_open {
     my $self = shift;
     return $self->state eq 'open';
@@ -74,6 +83,27 @@ sub _build_state {
           $self->is_merged ? 'merged'
         : $self->is_closed ? 'closed'
         :                    'open';
+}
+
+# add points for merges in the first 30 days
+# merges in 31 - 45 are neutral
+# subtract after 45 days
+
+sub _build_velocity {
+    my $self = shift;
+
+    if ( $self->is_open ) {
+        return $self->age > 45 ? 45 - $self->age : 0;
+    }
+
+    my $score = 0;
+    if ( $self->age < 31 ) {
+        $score += round( 1.2**( 31 - $self->age ) );
+    }
+    elsif ( $self->age > 45 ) {
+        $score = 45 - $self->age;
+    }
+    return $self->is_merged ? $score : round( $score / 2 );
 }
 
 __PACKAGE__->meta->make_immutable;

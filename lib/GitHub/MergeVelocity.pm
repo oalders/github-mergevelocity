@@ -154,18 +154,24 @@ sub print_report {
 
     my $table = Text::SimpleTable::AutoWidth->new;
     my @cols  = (
-        'user',       'repo',   'PRs',        'merged',
-        'merge days', 'closed', 'close days', 'open',
-        'open days',
+        'user',   'repo',       'velocity', 'PRs',
+        'merged', 'merge days', 'closed',   'close days',
+        'open',   'open days',
     );
     $table->captions( \@cols );
 
-    foreach my $url ( sort $self->_report_urls ) {
-        my $repository = $self->_repository_for_url($url);
-        my $report     = $repository->report;
+    my @repos = map { $self->_repository_for_url($_) } $self->_report_urls;
+
+    foreach my $repository (
+        sort { $b->report->average_velocity <=> $a->report->average_velocity }
+        @repos
+        )
+    {
+        my $report = $repository->report;
         $table->row(
             $repository->user,
             $repository->name,
+            $report->average_velocity,
             $report->pull_request_count,
             map { $self->_columns_for_state( $report, $_ ) }
                 ( 'merged', 'closed', 'open' ),
