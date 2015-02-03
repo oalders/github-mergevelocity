@@ -45,6 +45,12 @@ has number => (
     documentation => 'issue number in the GitHub url'
 );
 
+has title => (
+    is       => 'ro',
+    isa      => Str,
+    required => 1,
+);
+
 has state => (
     is       => 'ro',
     isa      => Str,
@@ -91,6 +97,8 @@ sub _build_state {
 
 sub _build_velocity {
     my $self = shift;
+
+    return 0 if $self->title =~ m{\A[?WIP]?};
 
     if ( $self->is_open ) {
         return $self->age > 45 ? 45 - $self->age : 0;

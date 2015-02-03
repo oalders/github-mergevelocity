@@ -12,6 +12,7 @@ use GitHub::MergeVelocity::Repository::PullRequest;
     my $pr = GitHub::MergeVelocity::Repository::PullRequest->new(
         created_at => $created,
         number     => 99,
+        title      => 'Foo',
     );
 
     is( $pr->state, 'open', 'is open' );
@@ -25,6 +26,7 @@ use GitHub::MergeVelocity::Repository::PullRequest;
         created_at => '2010-01-01',
         merged_at  => '2011-06-01',
         number     => 99,
+        title      => 'Foo',
     );
 
     is( $pr->state, 'merged', 'is merged' );
@@ -32,14 +34,17 @@ use GitHub::MergeVelocity::Repository::PullRequest;
 }
 
 {
-    my $pr = GitHub::MergeVelocity::Repository::PullRequest->new(
-        created_at => '2010-01-01',
-        merged_at  => '2010-01-01',
-        number     => 99,
-    );
+    foreach my $title ( '[WIP] foo', 'WIP: foo' ) {
+        my $pr = GitHub::MergeVelocity::Repository::PullRequest->new(
+            created_at => '2010-01-01',
+            merged_at  => '2010-01-01',
+            number     => 99,
+            title      => $title,
+        );
 
-    is( $pr->age, 0 );
-    diag $pr->velocity;
+        is( $pr->age,      0, 'age is 0' );
+        is( $pr->velocity, 0, 'zero velocity for WIPs' );
+    }
 }
 
 {
@@ -49,6 +54,7 @@ use GitHub::MergeVelocity::Repository::PullRequest;
             created_at => $start,
             merged_at  => $start->clone->add( days => $days ),
             number     => 99,
+            title      => 'Foo',
         );
 
         diag 'age: ' . $pr->age;

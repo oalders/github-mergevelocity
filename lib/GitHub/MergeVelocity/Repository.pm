@@ -92,6 +92,7 @@ sub _get_pull_requests {
             $row->{closed_at} ? ( closed_at => $row->{closed_at} ) : (),
             $row->{merged_at} ? ( merged_at => $row->{merged_at} ) : (),
             number => $row->{number},
+            title  => $row->{title},
             );
 
         push @pulls, $pull_request;
