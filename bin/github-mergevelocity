@@ -9,3 +9,38 @@ use warnings;
 use GitHub::MergeVelocity;
 
 GitHub::MergeVelocity->new_with_options->print_report;
+
+__END__
+=pod
+
+=head1 SYNOPSIS
+
+    github-mergevelocity --url https://github.com/oalders/html-restrict
+
+=head1 ARGS
+
+=head2 url
+
+Expects an URL to a Github repository.  Mutliple C<--url> args can be supplied.
+
+    github-mergevelocity --url https://github.com/oalders/html-restrict --url https://github.com/neilbowers/PAUSE-Packages
+
+=head2 github-user
+
+The username of your Github account.  You'll need this if you're hitting Github
+API limits.  In most cases this won't be an issue.
+
+=head2 github-token
+
+An API token for your Github account.  You'll need this if you're hitting
+Github API limits.  In most cases this won't be an issue.  See
+L<https://help.github.com/articles/creating-an-access-token-for-command-line-use>
+for more information.
+
+=head2 cache-requests
+
+Enable this if you're hitting API limits or need to speed up response time.
+
+    github-mergevelocity --url https://github.com/oalders/html-restrict --cache-requests
+
+=cut
