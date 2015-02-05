@@ -2,6 +2,7 @@ use Test::Most;
 
 use DDP;
 use GitHub::MergeVelocity;
+use Test::RequiresInternet ( 'api.github.com' => 443 );
 
 my $velo = GitHub::MergeVelocity->new(
     cache_requests  => $ENV{GMV_CACHE_REQUESTS},
@@ -12,9 +13,8 @@ my $velo = GitHub::MergeVelocity->new(
         github_user  => $ENV{GMV_GITHUB_USER},
         )
     : (),
-    url => [ 'https://github.com/oalders/html-restrict' ],
+    url => ['https://github.com/oalders/html-restrict'],
 );
-
 
 ok( $velo->report, 'report' );
 diag $velo->print_report;
