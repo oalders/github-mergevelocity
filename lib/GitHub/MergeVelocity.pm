@@ -7,7 +7,7 @@ use feature qw( say );
 use CHI;
 use CLDR::Number::Format::Percent;
 use GitHub::MergeVelocity::Repository;
-use LWP::ConsoleLogger::Easy qw( debug_ua );
+use LWP::ConsoleLogger::Easy 0.000013 qw( debug_ua );
 use Moose;
 use MooseX::Getopt::Dashes;
 use MooseX::StrictConstructor;
@@ -122,7 +122,7 @@ sub _build_mech {
         $mech = WWW::Mechanize->new;
     }
 
-    debug_ua($mech) if $self->debug_useragent;
+    debug_ua($mech, 7) if $self->debug_useragent;
     return $mech;
 }
 
