@@ -1,7 +1,7 @@
-package GitHub::MergeVelocity::Repository::Statistics;
-
 use strict;
 use warnings;
+
+package GitHub::MergeVelocity::Repository::Statistics;
 
 use Math::Round qw( nearest round );
 use Moose;

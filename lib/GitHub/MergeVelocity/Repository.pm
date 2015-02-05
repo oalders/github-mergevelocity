@@ -1,7 +1,7 @@
-package GitHub::MergeVelocity::Repository;
-
 use strict;
 use warnings;
+
+package GitHub::MergeVelocity::Repository;
 
 use GitHub::MergeVelocity::Repository::PullRequest;
 use GitHub::MergeVelocity::Repository::Statistics;

@@ -1,10 +1,12 @@
-package GitHub::MergeVelocity::Repository::PullRequest;
+use strict;
+use warnings;
 
-use Moose;
+package GitHub::MergeVelocity::Repository::PullRequest;
 
 use DateTime;
 use GitHub::MergeVelocity::Types qw( Datetime );
 use Math::Round qw( round );
+use Moose;
 use MooseX::StrictConstructor;
 use Types::Standard qw( Bool Int Str );
 

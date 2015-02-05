@@ -1,8 +1,7 @@
-package GitHub::MergeVelocity;
-
 use strict;
 use warnings;
-use feature qw( say );
+
+package GitHub::MergeVelocity;
 
 use CHI;
 use CLDR::Number::Format::Percent;
@@ -178,7 +177,7 @@ sub print_report {
         );
     }
 
-    binmode( STDOUT, ':utf8' );
+    binmode( STDOUT, ':encoding(UTF-8)' );
     print $table->draw;
     return;
 }
