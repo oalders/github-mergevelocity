@@ -6,7 +6,7 @@ use DateTime;
 use GitHub::MergeVelocity::Types qw( Datetime );
 use Math::Round qw( round );
 use MooseX::StrictConstructor;
-use Types::Standard qw( Int Str );
+use Types::Standard qw( Bool Int Str );
 
 has age => (
     is       => 'ro',
@@ -29,6 +29,15 @@ has created_at => (
     predicate => 'has_created_at',
     coerce    => 1,
     required  => 1,
+);
+
+has is_work_in_progress => (
+    is      => 'ro',
+    isa     => Bool,
+    lazy    => 1,
+    default => sub {
+        return shift->title =~ m{\A\[?WIP\]?};
+    },
 );
 
 has merged_at => (
@@ -98,7 +107,7 @@ sub _build_state {
 sub _build_velocity {
     my $self = shift;
 
-    return 0 if $self->title =~ m{\A[?WIP]?};
+    return 0 if $self->is_work_in_progress;
 
     if ( $self->is_open ) {
         return $self->age > 45 ? 45 - $self->age : 0;
