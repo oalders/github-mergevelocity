@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-# PODNAME: github-mergevelocity.pl
+# PODNAME: github-mergevelocity
 # ABSTRACT: CLI for determining how quickly a pull request might get merged
 
 use GitHub::MergeVelocity;
