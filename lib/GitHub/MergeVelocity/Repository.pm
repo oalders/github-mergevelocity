@@ -103,7 +103,7 @@ sub _get_pull_requests {
 
 sub _parse_github_url {
     my $self = shift;
-    my $uri  = URI->new( shift );
+    my $uri  = URI->new(shift);
 
     my @parts = split m{/}, $uri->path;
 

@@ -72,8 +72,8 @@ has _mech => (
 );
 
 has url => (
-    is     => 'ro',
-    isa    => ArrayRef,
+    is       => 'ro',
+    isa      => ArrayRef,
     required => 1,
 );
 
@@ -112,7 +112,7 @@ sub _build_mech {
         $mech = WWW::Mechanize->new;
     }
 
-    debug_ua($mech, 7) if $self->debug_useragent;
+    debug_ua( $mech, 7 ) if $self->debug_useragent;
     return $mech;
 }
 

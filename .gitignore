@@ -1,6 +1,6 @@
-*.swp
-.env
-.tidyall.d
-Github-MergeVelocity*
 cpanfile.snapshot
+.env
+Github-MergeVelocity*
 local
+*.swp
+.tidyall.d
