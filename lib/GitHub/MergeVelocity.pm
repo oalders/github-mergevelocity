@@ -180,11 +180,14 @@ sub _columns_for_state {
     my $age    = $state . '_age';
 
     return (
-        sprintf( '%i (%s)',
-            $report->$state,
-            $self->_format_percent( $report->percentage_in_state($state) ) ),
-        sprintf( '%i (%s/PR)',
-            $report->$age, $report->average_age_for_state($state) ),
+        $report->$state
+        ? sprintf( '%s (%i)',
+            $self->_format_percent( $report->percentage_in_state($state) ),
+            $report->$state )
+        : 0,
+        $report->$age ? sprintf( '%s/PR (%i)',
+            $report->average_age_for_state($state),
+            $report->$age ) : 0,
     );
 }
 
