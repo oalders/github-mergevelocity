@@ -21,8 +21,8 @@ foreach my $url (@urls) {
         github_client => Pithub::PullRequests->new(),
         url           => $url,
     );
-    is( $repo->user, 'user',            'repo user' );
-    is( $repo->name, 'repository-name', 'repo name' );
+    is( $repo->user, 'user',            'repo user from ' . $url );
+    is( $repo->name, 'repository-name', 'repo name from ' . $url );
 }
 
 done_testing;
