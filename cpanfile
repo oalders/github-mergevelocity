@@ -12,6 +12,7 @@ requires "Text::SimpleTable::AutoWidth" => "0.09";
 requires "Type::Library" => "0";
 requires "Type::Utils" => "0";
 requires "Types::Standard" => "0";
+requires "URI" => "0";
 requires "WWW::Mechanize::Cached" => "0";
 requires "strict" => "0";
 requires "warnings" => "0";
