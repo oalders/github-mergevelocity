@@ -6,8 +6,8 @@ package GitHub::MergeVelocity::Repository::PullRequest;
 use DateTime;
 use GitHub::MergeVelocity::Types qw( Datetime );
 use Math::Round qw( round );
-use Moose;
-use MooseX::StrictConstructor;
+use Moo;
+use MooX::StrictConstructor;
 use Types::Standard qw( Bool Int Str );
 
 has age => (
@@ -125,7 +125,6 @@ sub _build_velocity {
     return $self->is_merged ? $score : round( $score / 2 );
 }
 
-__PACKAGE__->meta->make_immutable;
 1;
 
 __END__

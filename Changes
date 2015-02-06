@@ -1,8 +1,10 @@
 Revision history for GitHub-MergeVelocity
 
 {{$NEXT}}
+    - Converts dist from Moose to Moo
 
 0.000003  2015-02-06 18:17:48-05:00 America/Toronto
+    - Makes printed report easier to decipher
 
 0.000002  2015-02-05 23:32:12-05:00 America/Toronto
     - Be more liberal when parsing repo urls

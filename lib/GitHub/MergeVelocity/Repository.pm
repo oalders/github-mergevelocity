@@ -5,14 +5,14 @@ package GitHub::MergeVelocity::Repository;
 
 use GitHub::MergeVelocity::Repository::PullRequest;
 use GitHub::MergeVelocity::Repository::Statistics;
-use Moose;
-use MooseX::StrictConstructor;
-use Types::Standard qw( ArrayRef Bool Str );
+use Moo;
+use MooX::StrictConstructor;
+use Types::Standard qw( ArrayRef Bool InstanceOf Str );
 use URI ();
 
 has github_client => (
     is       => 'ro',
-    isa      => 'Pithub::PullRequests',
+    isa      => InstanceOf ['Pithub::PullRequests'],
     required => 1,
 );
 
@@ -30,7 +30,7 @@ has name => (
 
 has report => (
     is       => 'ro',
-    isa      => 'GitHub::MergeVelocity::Repository::Statistics',
+    isa      => InstanceOf ['GitHub::MergeVelocity::Repository::Statistics'],
     init_arg => undef,
     lazy     => 1,
     builder  => '_build_report',
@@ -115,7 +115,6 @@ sub _parse_github_url {
     return ( $user, $name );
 }
 
-__PACKAGE__->meta->make_immutable();
 1;
 
 __END__

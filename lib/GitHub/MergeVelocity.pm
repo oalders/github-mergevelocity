@@ -7,17 +7,18 @@ use CHI;
 use CLDR::Number::Format::Percent;
 use GitHub::MergeVelocity::Repository;
 use LWP::ConsoleLogger::Easy 0.000013 qw( debug_ua );
-use Moose;
-use MooseX::Getopt::Dashes;
-use MooseX::StrictConstructor;
+use Moo;
+use MooX::HandlesVia;
+use MooX::Options;
+use MooX::StrictConstructor;
 use Pithub::PullRequests;
 use Text::SimpleTable::AutoWidth;
-use Types::Standard qw( ArrayRef Bool HashRef Str );
+use Types::Standard qw( ArrayRef Bool HashRef InstanceOf Str );
 use WWW::Mechanize::Cached;
 
 with 'MooseX::Getopt::Dashes';
 
-has debug_useragent => (
+option debug_useragent => (
     is            => 'ro',
     isa           => Bool,
     documentation => 'Print a _lot_ of debugging info about LWP requests',
@@ -27,20 +28,20 @@ my $token_help = <<'EOF';
 https://help.github.com/articles/creating-an-access-token-for-command-line-use for instructions on how to get your own GitHub access token
 EOF
 
-has cache_requests => (
+option cache_requests => (
     is            => 'ro',
     isa           => Bool,
     documentation => 'Try to cache GET requests',
 );
 
-has github_token => (
+option github_token => (
     is            => 'ro',
     isa           => Str,
     required      => 0,
     documentation => $token_help,
 );
 
-has github_user => (
+option github_user => (
     is            => 'ro',
     isa           => Str,
     required      => 0,
@@ -48,30 +49,30 @@ has github_user => (
 );
 
 has _report => (
-    is       => 'ro',
-    isa      => HashRef,
-    traits   => ['Hash'],
-    init_arg => undef,
-    handles  => { _repository_for_url => 'get', _report_urls => 'keys', },
-    lazy     => 1,
-    builder  => '_build_report',
+    is          => 'ro',
+    isa         => HashRef,
+    handles_via => 'Hash',
+    init_arg    => undef,
+    handles     => { _repository_for_url => 'get', _report_urls => 'keys', },
+    lazy        => 1,
+    builder     => '_build_report',
 );
 
 has _github_client => (
     is      => 'ro',
-    isa     => 'Pithub::PullRequests',
+    isa     => InstanceOf ['Pithub::PullRequests'],
     lazy    => 1,
     builder => '_build_github_client'
 );
 
 has _mech => (
     is      => 'ro',
-    isa     => 'WWW::Mechanize',
+    isa     => InstanceOf ['WWW::Mechanize'],
     lazy    => 1,
     builder => '_build_mech',
 );
 
-has url => (
+option url => (
     is       => 'ro',
     isa      => ArrayRef,
     required => 1,
@@ -79,7 +80,7 @@ has url => (
 
 has _percent_formatter => (
     is      => 'ro',
-    isa     => 'CLDR::Number::Format::Percent',
+    isa     => InstanceOf ['CLDR::Number::Format::Percent'],
     handles => { '_format_percent' => 'format' },
     lazy    => 1,
     default => sub { CLDR::Number::Format::Percent->new( locale => 'en' ) },
@@ -191,7 +192,6 @@ sub _columns_for_state {
     );
 }
 
-__PACKAGE__->meta->make_immutable();
 1;
 
 __END__

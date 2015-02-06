@@ -4,7 +4,7 @@ use warnings;
 package GitHub::MergeVelocity::Repository::Statistics;
 
 use Math::Round qw( nearest round );
-use Moose;
+use Moo;
 use Types::Standard qw( Bool Int );
 
 has average_velocity => (
@@ -33,7 +33,7 @@ has [ 'closed_age', 'open_age', 'merged_age' ] => (
 
 has pull_request_count => (
     is      => 'ro',
-    isa     => 'Int',
+    isa     => Int,
     lazy    => 1,
     default => sub {
         my $self = shift;
@@ -65,7 +65,6 @@ sub percentage_in_state {
         : 0;
 }
 
-__PACKAGE__->meta->make_immutable;
 1;
 
 __END__
