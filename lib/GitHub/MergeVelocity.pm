@@ -47,12 +47,6 @@ has github_user => (
     documentation => 'The username of your GitHub account',
 );
 
-has url => (
-    is       => 'ro',
-    isa      => ArrayRef,
-    required => 1,
-);
-
 has _report => (
     is       => 'ro',
     isa      => HashRef,
@@ -80,9 +74,6 @@ has _mech => (
 has url => (
     is     => 'ro',
     isa    => ArrayRef,
-    traits => ['Array'],
-
-    #    handles => { '_all_repositories' => 'elements' },
     required => 1,
 );
 
