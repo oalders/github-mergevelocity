@@ -120,7 +120,7 @@ __PACKAGE__->meta->make_immutable();
 
 __END__
 
-# ABSTRACT: Determine how quickly your pull request might get merged
+# ABSTRACT: Encapsulate pull request data for a repository
 
 =pod
 
