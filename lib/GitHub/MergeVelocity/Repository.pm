@@ -8,6 +8,7 @@ use GitHub::MergeVelocity::Repository::Statistics;
 use Moose;
 use MooseX::StrictConstructor;
 use Types::Standard qw( ArrayRef Bool Str );
+use URI ();
 
 has github_client => (
     is       => 'ro',
@@ -102,12 +103,13 @@ sub _get_pull_requests {
 
 sub _parse_github_url {
     my $self = shift;
-    my $url  = shift;
+    my $uri  = URI->new( shift );
 
-    my @parts = split qr{[/:]}, $url;
+    my @parts = split m{/}, $uri->path;
 
-    my $name = pop @parts;
-    my $user = pop @parts;
+    # paths may or may not have a leading slash (absolute vs relative)
+    my $user = shift @parts || shift @parts;
+    my $name = shift @parts;
     $name =~ s{\.git}{};
 
     return ( $user, $name );

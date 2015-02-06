@@ -9,7 +9,10 @@ use Pithub::PullRequests;
 
 my @urls = (
     'git@github.com:user/repository-name.git',
+    'https://github.com/user/repository-name',
     'https://github.com/user/repository-name.git',
+    'https://github.com/user/repository-name/issues',
+    'user/repository-name',
 );
 
 foreach my $url (@urls) {
