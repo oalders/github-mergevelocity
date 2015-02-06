@@ -1,6 +1,8 @@
 Revision history for GitHub-MergeVelocity
 
 {{$NEXT}}
+
+0.000002  2015-02-05 23:32:12-05:00 America/Toronto
     - Be more liberal when parsing repo urls
     - Fixes pod name of included script
 
