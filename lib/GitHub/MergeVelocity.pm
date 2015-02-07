@@ -3,19 +3,18 @@ use warnings;
 
 package GitHub::MergeVelocity;
 
-use CHI;
 use CLDR::Number::Format::Percent;
 use File::HomeDir;
 use GitHub::MergeVelocity::Repository;
 use Moo;
+use Module::Runtime qw( require_module );
 use MooX::HandlesVia;
 use MooX::Options;
 use MooX::StrictConstructor;
 use Path::Tiny;
 use Pithub::PullRequests;
-use Text::SimpleTable::AutoWidth;
+use Text::SimpleTable::AutoWidth 0.09;
 use Types::Standard qw( ArrayRef Bool HashRef InstanceOf Int Str );
-use WWW::Mechanize::Cached;
 use WWW::Mechanize::GZip;
 
 option debug_useragent => (
@@ -112,6 +111,8 @@ sub _build_mech {
         my $dir = path( File::HomeDir->my_home );
         $dir->child('.github-mergevelocity-cache')->mkpath;
 
+        require_module('CHI');
+        require_module('WWW::Mechanize::Cached');
         $mech = WWW::Mechanize::Cached->new(
             cache => CHI->new(
                 driver   => 'File',
@@ -123,7 +124,7 @@ sub _build_mech {
         $mech = WWW::Mechanize::GZip->new;
     }
     if ( $self->debug_useragent ) {
-        require LWP::ConsoleLogger::Easy;
+        require_module('LWP::ConsoleLogger::Easy');
         LWP::ConsoleLogger::Easy::debug_ua( $mech, $self->debug_useragent );
     }
     return $mech;
