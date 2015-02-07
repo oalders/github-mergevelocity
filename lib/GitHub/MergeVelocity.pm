@@ -16,6 +16,7 @@ use Pithub::PullRequests;
 use Text::SimpleTable::AutoWidth;
 use Types::Standard qw( ArrayRef Bool HashRef InstanceOf Int Str );
 use WWW::Mechanize::Cached;
+use WWW::Mechanize::GZip;
 
 with 'MooseX::Getopt::Dashes';
 
@@ -59,7 +60,7 @@ option url => (
     format   => 's@',
     required => 1,
     documentation =>
-        'Full Github repo url or shorthand of username/repository',
+        'Full Github repo url or shorthand of username/repository.  You can pass multiple url args.',
 );
 
 has _report => (
@@ -121,7 +122,7 @@ sub _build_mech {
         );
     }
     else {
-        $mech = WWW::Mechanize->new;
+        $mech = WWW::Mechanize::GZip->new;
     }
     if ( $self->debug_useragent ) {
         require LWP::ConsoleLogger::Easy;

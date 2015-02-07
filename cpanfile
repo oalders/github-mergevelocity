@@ -18,6 +18,7 @@ requires "Type::Utils" => "0";
 requires "Types::Standard" => "0";
 requires "URI" => "0";
 requires "WWW::Mechanize::Cached" => "0";
+requires "WWW::Mechanize::GZip" => "0";
 requires "strict" => "0";
 requires "warnings" => "0";
 
