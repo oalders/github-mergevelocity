@@ -3,19 +3,19 @@ use warnings;
 
 package GitHub::MergeVelocity;
 
-use CLDR::Number::Format::Percent;
-use File::HomeDir;
-use GitHub::MergeVelocity::Repository;
-use Moo;
+use CLDR::Number::Format::Percent ();
+use File::HomeDir ();
+use GitHub::MergeVelocity::Repository ();
 use Module::Runtime qw( require_module );
+use Moo;
 use MooX::HandlesVia;
 use MooX::Options;
 use MooX::StrictConstructor;
-use Path::Tiny;
-use Pithub::PullRequests;
+use Path::Tiny qw( path );
+use Pithub::PullRequests ();
 use Text::SimpleTable::AutoWidth 0.09;
 use Types::Standard qw( ArrayRef Bool HashRef InstanceOf Int Str );
-use WWW::Mechanize::GZip;
+use WWW::Mechanize::GZip ();
 
 option debug_useragent => (
     is            => 'ro',
