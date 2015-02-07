@@ -9,7 +9,6 @@ requires "Moo" => "0";
 requires "MooX::HandlesVia" => "0";
 requires "MooX::Options" => "0";
 requires "MooX::StrictConstructor" => "0";
-requires "MooseX::Getopt::Dashes" => "0";
 requires "Path::Tiny" => "0";
 requires "Pithub::PullRequests" => "0";
 requires "Text::SimpleTable::AutoWidth" => "0.09";

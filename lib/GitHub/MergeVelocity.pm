@@ -18,8 +18,6 @@ use Types::Standard qw( ArrayRef Bool HashRef InstanceOf Int Str );
 use WWW::Mechanize::Cached;
 use WWW::Mechanize::GZip;
 
-with 'MooseX::Getopt::Dashes';
-
 option debug_useragent => (
     is            => 'ro',
     isa           => Int,
