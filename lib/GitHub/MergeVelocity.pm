@@ -116,7 +116,7 @@ sub _build_mech {
         $mech = WWW::Mechanize::Cached->new(
             cache => CHI->new(
                 driver   => 'File',
-                root_dir => $dir,
+                root_dir => $dir->stringify,
             )
         );
     }
