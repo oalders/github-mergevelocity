@@ -5,22 +5,25 @@ package GitHub::MergeVelocity;
 
 use CHI;
 use CLDR::Number::Format::Percent;
+use File::HomeDir;
 use GitHub::MergeVelocity::Repository;
-use LWP::ConsoleLogger::Easy 0.000013 qw( debug_ua );
 use Moo;
 use MooX::HandlesVia;
 use MooX::Options;
 use MooX::StrictConstructor;
+use Path::Tiny;
 use Pithub::PullRequests;
 use Text::SimpleTable::AutoWidth;
-use Types::Standard qw( ArrayRef Bool HashRef InstanceOf Str );
+use Types::Standard qw( ArrayRef Bool HashRef InstanceOf Int Str );
 use WWW::Mechanize::Cached;
 
 with 'MooseX::Getopt::Dashes';
 
 option debug_useragent => (
     is            => 'ro',
-    isa           => Bool,
+    isa           => Int,
+    format        => 'i',
+    default       => 0,
     documentation => 'Print a _lot_ of debugging info about LWP requests',
 );
 
@@ -38,6 +41,7 @@ option github_token => (
     is            => 'ro',
     isa           => Str,
     required      => 0,
+    format        => 's',
     documentation => $token_help,
 );
 
@@ -45,7 +49,17 @@ option github_user => (
     is            => 'ro',
     isa           => Str,
     required      => 0,
+    format        => 's',
     documentation => 'The username of your GitHub account',
+);
+
+option url => (
+    is       => 'ro',
+    isa      => ArrayRef,
+    format   => 's@',
+    required => 1,
+    documentation =>
+        'Full Github repo url or shorthand of username/repository',
 );
 
 has _report => (
@@ -67,15 +81,9 @@ has _github_client => (
 
 has _mech => (
     is      => 'ro',
-    isa     => InstanceOf ['WWW::Mechanize'],
+    isa     => InstanceOf ['LWP::UserAgent'],
     lazy    => 1,
     builder => '_build_mech',
-);
-
-option url => (
-    is       => 'ro',
-    isa      => ArrayRef,
-    required => 1,
 );
 
 has _percent_formatter => (
@@ -102,18 +110,23 @@ sub _build_mech {
     my $mech;
 
     if ( $self->cache_requests ) {
+        my $dir = path( File::HomeDir->my_home );
+        $dir->child('.github-mergevelocity-cache')->mkpath;
+
         $mech = WWW::Mechanize::Cached->new(
             cache => CHI->new(
                 driver   => 'File',
-                root_dir => '/tmp/metacpan-cache',
+                root_dir => $dir,
             )
         );
     }
     else {
         $mech = WWW::Mechanize->new;
     }
-
-    debug_ua( $mech, 7 ) if $self->debug_useragent;
+    if ( $self->debug_useragent ) {
+        require LWP::ConsoleLogger::Easy;
+        LWP::ConsoleLogger::Easy::debug_ua( $mech, $self->debug_useragent );
+    }
     return $mech;
 }
 

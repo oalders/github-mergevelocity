@@ -6,7 +6,7 @@ use Test::RequiresInternet ( 'api.github.com' => 443 );
 
 my $velo = GitHub::MergeVelocity->new(
     cache_requests  => $ENV{GMV_CACHE_REQUESTS},
-    debug_useragent => $ENV{GMV_DEBUG_USERAGENT},
+    debug_useragent => $ENV{GMV_DEBUG_USERAGENT} || 0,
     $ENV{GMV_GITHUB_TOKEN}
     ? (
         github_token => $ENV{GMV_GITHUB_TOKEN},
