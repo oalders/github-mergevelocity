@@ -1,6 +1,8 @@
 Revision history for GitHub-MergeVelocity
 
 {{$NEXT}}
+
+0.000004  2015-02-07 00:12:27-05:00 America/Toronto
     - Converts dist from Moose to Moo
 
 0.000003  2015-02-06 18:17:48-05:00 America/Toronto
