@@ -6,7 +6,7 @@ package GitHub::MergeVelocity;
 use CLDR::Number::Format::Percent ();
 use File::HomeDir ();
 use GitHub::MergeVelocity::Repository ();
-use Module::Runtime qw( require_module );
+use Module::Runtime qw( require_module use_module );
 use Moo;
 use MooX::HandlesVia;
 use MooX::Options;
@@ -112,8 +112,7 @@ sub _build_mech {
         $dir->child('.github-mergevelocity-cache')->mkpath;
 
         require_module('CHI');
-        require_module('WWW::Mechanize::Cached');
-        $mech = WWW::Mechanize::Cached->new(
+        $mech = use_module('WWW::Mechanize::Cached', 1.45)->new(
             cache => CHI->new(
                 driver   => 'File',
                 root_dir => $dir->stringify,
@@ -124,7 +123,7 @@ sub _build_mech {
         $mech = WWW::Mechanize::GZip->new;
     }
     if ( $self->debug_useragent ) {
-        require_module('LWP::ConsoleLogger::Easy');
+        use_module('LWP::ConsoleLogger::Easy', 0.000013);
         LWP::ConsoleLogger::Easy::debug_ua( $mech, $self->debug_useragent );
     }
     return $mech;
