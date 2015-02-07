@@ -24,7 +24,6 @@ on 'build' => sub {
 };
 
 on 'test' => sub {
-  requires "DDP" => "0";
   requires "Test::Most" => "0";
   requires "Test::RequiresInternet" => "0";
 };

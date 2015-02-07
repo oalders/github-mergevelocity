@@ -1,6 +1,5 @@
 use Test::Most;
 
-use DDP;
 use GitHub::MergeVelocity;
 use Test::RequiresInternet ( 'api.github.com' => 443 );
 
