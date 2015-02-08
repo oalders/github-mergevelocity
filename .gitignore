@@ -1,6 +1,10 @@
+bin/ghm-packed.pl
 cpanfile.snapshot
 .env
+fatpacker.trace
 Github-MergeVelocity*
 local
+packed.pl
+packlists
 *.swp
 .tidyall.d

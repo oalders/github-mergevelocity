@@ -1,3 +1,4 @@
 advent.pod
+bin/pack-script.sh
 cpanfile.snapshot
 local
