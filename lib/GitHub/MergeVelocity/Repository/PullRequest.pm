@@ -122,7 +122,7 @@ sub _build_velocity {
     elsif ( $self->age > 45 ) {
         $score = 45 - $self->age;
     }
-    return $self->is_merged ? $score : round( $score / 2 );
+    return $score;
 }
 
 1;
