@@ -58,9 +58,10 @@ sub _build_report {
     my $self = shift;
 
     my $pulls = $self->_get_pull_requests;
+
     my $total = $pulls ? scalar @{$pulls} : 0;
 
-    my %summary;
+    my %summary = ( total_velocity => 0 );
 
     foreach my $pr ( @{$pulls} ) {
         $summary{ $pr->state }++;
