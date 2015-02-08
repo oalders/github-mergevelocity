@@ -1,6 +1,9 @@
 Revision history for GitHub-MergeVelocity
 
 {{$NEXT}}
+    - Makes CHI, WWW::Mechanize::Cached and LWP::ConsoleLogger recommended
+      rather than required
+    - No longer special cases closed pull requests
 
 0.000004  2015-02-07 00:12:27-05:00 America/Toronto
     - Converts dist from Moose to Moo
