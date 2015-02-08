@@ -1,7 +1,7 @@
+package GitHub::MergeVelocity::Repository;
+
 use strict;
 use warnings;
-
-package GitHub::MergeVelocity::Repository;
 
 use GitHub::MergeVelocity::Repository::PullRequest;
 use GitHub::MergeVelocity::Repository::Statistics;
@@ -72,6 +72,7 @@ sub _build_report {
     return GitHub::MergeVelocity::Repository::Statistics->new(%summary);
 }
 
+## no critic (ValuesAndExpressions::ProhibitAccessOfPrivateData)
 sub _get_pull_requests {
     my $self = shift;
 
@@ -101,6 +102,7 @@ sub _get_pull_requests {
     }
     return \@pulls;
 }
+## use critic
 
 sub _parse_github_url {
     my $self = shift;

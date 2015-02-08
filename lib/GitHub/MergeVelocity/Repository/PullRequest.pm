@@ -1,7 +1,7 @@
+package GitHub::MergeVelocity::Repository::PullRequest;
+
 use strict;
 use warnings;
-
-package GitHub::MergeVelocity::Repository::PullRequest;
 
 use DateTime;
 use GitHub::MergeVelocity::Types qw( Datetime );

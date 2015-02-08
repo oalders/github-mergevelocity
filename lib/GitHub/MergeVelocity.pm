@@ -1,7 +1,7 @@
+package GitHub::MergeVelocity;
+
 use strict;
 use warnings;
-
-package GitHub::MergeVelocity;
 
 use CLDR::Number::Format::Percent     ();
 use File::HomeDir                     ();

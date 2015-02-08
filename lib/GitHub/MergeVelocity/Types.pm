@@ -1,7 +1,7 @@
+package GitHub::MergeVelocity::Types;
+
 use strict;
 use warnings;
-
-package GitHub::MergeVelocity::Types;
 
 use DateTime::Format::ISO8601;
 use Type::Library -base, -declare => ('Datetime');
