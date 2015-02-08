@@ -1,6 +1,8 @@
 Revision history for GitHub-MergeVelocity
 
 {{$NEXT}}
+
+0.000005  2015-02-07 22:24:30-05:00 America/Toronto
     - Makes CHI, WWW::Mechanize::Cached and LWP::ConsoleLogger recommended
       rather than required
     - No longer special cases closed pull requests
