@@ -13,7 +13,7 @@ use MooX::Options;
 use MooX::StrictConstructor;
 use Path::Tiny qw( path );
 use Pithub::PullRequests ();
-use Text::SimpleTable::AutoWidth 0.09;
+use Text::SimpleTable::AutoWidth;
 use Types::Standard qw( ArrayRef Bool HashRef InstanceOf Int Str );
 use WWW::Mechanize::GZip ();
 
