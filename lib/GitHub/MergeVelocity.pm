@@ -7,7 +7,7 @@ use CLDR::Number::Format::Percent     ();
 use File::HomeDir                     ();
 use GitHub::MergeVelocity::Repository ();
 use Module::Runtime qw( require_module use_module );
-use Moo;
+use Moo 1.007000;
 use MooX::HandlesVia;
 use MooX::Options;
 use MooX::StrictConstructor;

@@ -1,6 +1,7 @@
 Revision history for GitHub-MergeVelocity
 
 {{$NEXT}}
+    - Bumps minimum version of Moo to 1.007000
 
 0.000006  2015-02-08 23:01:49-05:00 America/Toronto
     - Bumps minimum version of WWW::Mechanize::Cached to 1.46
