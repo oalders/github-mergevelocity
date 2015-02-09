@@ -1,6 +1,7 @@
 Revision history for GitHub-MergeVelocity
 
 {{$NEXT}}
+    - Bumps minimum version of WWW::Mechanize::Cached to 1.46
 
 0.000005  2015-02-07 22:24:30-05:00 America/Toronto
     - Makes CHI, WWW::Mechanize::Cached and LWP::ConsoleLogger recommended

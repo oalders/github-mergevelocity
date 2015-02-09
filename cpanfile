@@ -20,7 +20,7 @@ requires "strict" => "0";
 requires "warnings" => "0";
 recommends "CHI" => "0";
 recommends "LWP::ConsoleLogger" => "0.000013";
-recommends "WWW::Mechanize::Cached" => "1.45";
+recommends "WWW::Mechanize::Cached" => "1.46";
 
 on 'build' => sub {
   requires "Module::Build" => "0.28";
