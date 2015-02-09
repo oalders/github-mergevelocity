@@ -35,3 +35,9 @@ on 'configure' => sub {
   requires "ExtUtils::MakeMaker" => "0";
   requires "Module::Build" => "0.28";
 };
+
+on 'develop' => sub {
+  requires "Code::TidyAll" => "0.24";
+  requires "Test::Code::TidyAll" => "0.24";
+  requires "Test::More" => "0.88";
+};
