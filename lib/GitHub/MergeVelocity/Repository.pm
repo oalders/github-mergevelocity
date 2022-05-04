@@ -82,6 +82,8 @@ sub _get_pull_requests {
         params => { per_page => 100, state => 'all' },
     );
 
+    $result->auto_pagination(1);
+
     my @pulls;
 
     while ( my $row = $result->next ) {
