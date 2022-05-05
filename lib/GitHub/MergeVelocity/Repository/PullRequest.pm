@@ -1,12 +1,11 @@
 package GitHub::MergeVelocity::Repository::PullRequest;
-our $VERSION = '0.000009';
-use strict;
-use warnings;
+use Moo;
 
-use DateTime;
+our $VERSION = '0.000009';
+
+use DateTime ();
 use GitHub::MergeVelocity::Types qw( Datetime );
 use Math::Round qw( round );
-use Moo;
 use MooX::StrictConstructor;
 use Types::Standard qw( Bool Int Str );
 

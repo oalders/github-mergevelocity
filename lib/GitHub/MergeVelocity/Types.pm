@@ -1,7 +1,9 @@
 package GitHub::MergeVelocity::Types;
-our $VERSION = '0.000009';
+
 use strict;
 use warnings;
+
+our $VERSION = '0.000009';
 
 use DateTime::Format::ISO8601;
 use Type::Library -base, -declare => ('Datetime');
