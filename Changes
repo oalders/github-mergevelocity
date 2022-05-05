@@ -1,6 +1,6 @@
 Revision history for GitHub-MergeVelocity
 
-{{$NEXT}}
+0.000008  2022-05-05 14:55:56Z
     - Enable auto_pagination for repositories with more than 100 PRs (GH#2)
       (thibaultduponchelle)
 
