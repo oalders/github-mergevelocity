@@ -1,9 +1,10 @@
-Github-MergeVelocity*
 bin/ghm-packed.pl
+.build
 cpanfile.snapshot
 .env
 fatlib
 fatpacker.trace
+GitHub-MergeVelocity*
 local
 packlists
 *.swp
