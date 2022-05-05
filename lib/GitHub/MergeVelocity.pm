@@ -52,10 +52,10 @@ option github_user => (
 );
 
 option url => (
-    is       => 'ro',
-    isa      => ArrayRef,
-    format   => 's@',
-    required => 1,
+    is            => 'ro',
+    isa           => ArrayRef,
+    format        => 's@',
+    required      => 1,
     documentation =>
         'Full Github repo url or shorthand of username/repository.  You can pass multiple url args.',
 );
