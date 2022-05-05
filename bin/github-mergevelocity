@@ -21,7 +21,7 @@ __END__
 
 =head2 url
 
-Expects an URL to a Github repository.  Mutliple C<--url> args can be supplied.
+Expects an URL to a Github repository.  Multiple C<--url> args can be supplied.
 
     github-mergevelocity --url oalders/html-restrict --url https://github.com/neilbowers/PAUSE-Packages
 
