@@ -1,19 +1,19 @@
 package GitHub::MergeVelocity;
+
+use Moo 1.007000;
+
 our $VERSION = '0.000009';
-use strict;
-use warnings;
 
 use CLDR::Number::Format::Percent     ();
 use File::HomeDir                     ();
 use GitHub::MergeVelocity::Repository ();
 use Module::Runtime qw( require_module use_module );
-use Moo 1.007000;
 use MooX::HandlesVia;
 use MooX::Options;
 use MooX::StrictConstructor;
 use Path::Tiny qw( path );
-use Pithub::PullRequests ();
-use Text::SimpleTable::AutoWidth;
+use Pithub::PullRequests         ();
+use Text::SimpleTable::AutoWidth ();
 use Types::Standard qw( ArrayRef Bool HashRef InstanceOf Int Str );
 use WWW::Mechanize::GZip ();
 

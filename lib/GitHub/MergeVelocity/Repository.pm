@@ -1,11 +1,11 @@
 package GitHub::MergeVelocity::Repository;
-our $VERSION = '0.000009';
-use strict;
-use warnings;
 
-use GitHub::MergeVelocity::Repository::PullRequest;
-use GitHub::MergeVelocity::Repository::Statistics;
 use Moo;
+
+our $VERSION = '0.000009';
+
+use GitHub::MergeVelocity::Repository::PullRequest ();
+use GitHub::MergeVelocity::Repository::Statistics  ();
 use MooX::StrictConstructor;
 use Types::Standard qw( ArrayRef Bool InstanceOf Str );
 use URI ();

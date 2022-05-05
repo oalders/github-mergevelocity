@@ -1,10 +1,10 @@
 package GitHub::MergeVelocity::Repository::Statistics;
+
+use Moo;
+
 our $VERSION = '0.000009';
-use strict;
-use warnings;
 
 use Math::Round qw( nearest round );
-use Moo;
 use Types::Standard qw( Bool Int );
 
 has average_velocity => (
