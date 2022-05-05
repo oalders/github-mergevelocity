@@ -1,5 +1,5 @@
 package GitHub::MergeVelocity::Repository::Statistics;
-
+our $VERSION = '0.000009';
 use strict;
 use warnings;
 

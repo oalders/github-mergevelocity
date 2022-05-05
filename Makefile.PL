@@ -45,7 +45,7 @@ my %WriteMakefileArgs = (
     "Test::Most" => 0,
     "Test::RequiresInternet" => 0
   },
-  "VERSION" => "0.000008",
+  "VERSION" => "0.000009",
   "test" => {
     "TESTS" => "t/*.t t/GitHub/*.t t/GitHub/MergeVelocity/*.t t/GitHub/MergeVelocity/Repository/*.t"
   }
