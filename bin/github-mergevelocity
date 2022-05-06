@@ -37,7 +37,7 @@ repo in it.  Be creative!
 
 =head2 org
 
-Expects an Github organization.  Mutliple C<--org> args can be supplied.
+Expects an Github organization.  Multiple C<--org> args can be supplied.
 
     github-mergevelocity --org libwww-perl
 

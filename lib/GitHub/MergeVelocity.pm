@@ -154,10 +154,10 @@ sub _build_report {
             my $repos  = Pithub::Repos->new;
             my $result = $repos->list( org => $org );
 
-            if ( ref $result->content eq 'ARRAY' ) {
-                foreach my $repo ( @{ $result->content } ) {
-                    push @org_urls, $repo->{full_name};
-                }
+            $result->auto_pagination(1);
+
+            while ( my $row = $result->next ) {
+                push @org_urls, $row->{full_name};
             }
         }
     }
