@@ -4,7 +4,7 @@ GitHub::MergeVelocity - Determine how quickly your pull request might get merged
 
 # VERSION
 
-version 0.000008
+version 0.000009
 
 # SYNOPSIS
 

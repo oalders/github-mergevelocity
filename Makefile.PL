@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use 5.008;
+use 5.016;
 
 use ExtUtils::MakeMaker;
 
@@ -14,13 +14,15 @@ my %WriteMakefileArgs = (
   },
   "DISTNAME" => "GitHub-MergeVelocity",
   "LICENSE" => "perl",
-  "MIN_PERL_VERSION" => "5.008",
+  "MIN_PERL_VERSION" => "5.016",
   "NAME" => "GitHub::MergeVelocity",
   "PREREQ_PM" => {
     "CLDR::Number::Format::Percent" => 0,
     "DateTime" => 0,
     "DateTime::Format::ISO8601" => 0,
     "File::HomeDir" => 0,
+    "LWP::Protocol::https" => "6.10",
+    "List::Util" => 0,
     "Math::Round" => 0,
     "Module::Runtime" => 0,
     "Moo" => "1.007000",
@@ -29,6 +31,7 @@ my %WriteMakefileArgs = (
     "MooX::StrictConstructor" => 0,
     "Path::Tiny" => 0,
     "Pithub::PullRequests" => 0,
+    "Pithub::Repos" => 0,
     "Text::SimpleTable::AutoWidth" => "0.09",
     "Type::Library" => 0,
     "Type::Utils" => 0,
@@ -59,6 +62,8 @@ my %FallbackPrereqs = (
   "ExtUtils::MakeMaker" => 0,
   "File::HomeDir" => 0,
   "File::Spec" => 0,
+  "LWP::Protocol::https" => "6.10",
+  "List::Util" => 0,
   "Math::Round" => 0,
   "Module::Runtime" => 0,
   "Moo" => "1.007000",
@@ -67,6 +72,7 @@ my %FallbackPrereqs = (
   "MooX::StrictConstructor" => 0,
   "Path::Tiny" => 0,
   "Pithub::PullRequests" => 0,
+  "Pithub::Repos" => 0,
   "Test::More" => 0,
   "Test::Most" => 0,
   "Test::RequiresInternet" => 0,

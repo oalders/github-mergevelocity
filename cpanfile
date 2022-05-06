@@ -5,6 +5,7 @@ requires "CLDR::Number::Format::Percent" => "0";
 requires "DateTime" => "0";
 requires "DateTime::Format::ISO8601" => "0";
 requires "File::HomeDir" => "0";
+requires "LWP::Protocol::https" => "6.10";
 requires "List::Util" => "0";
 requires "Math::Round" => "0";
 requires "Module::Runtime" => "0";
@@ -21,7 +22,7 @@ requires "Type::Utils" => "0";
 requires "Types::Standard" => "0";
 requires "URI" => "0";
 requires "WWW::Mechanize::GZip" => "0";
-requires "perl" => "5.008";
+requires "perl" => "5.016";
 requires "strict" => "0";
 requires "warnings" => "0";
 recommends "CHI" => "0";
@@ -34,7 +35,7 @@ on 'test' => sub {
   requires "Test::More" => "0";
   requires "Test::Most" => "0";
   requires "Test::RequiresInternet" => "0";
-  requires "perl" => "5.008";
+  requires "perl" => "5.016";
 };
 
 on 'test' => sub {
