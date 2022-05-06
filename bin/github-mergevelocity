@@ -35,6 +35,12 @@ repo in it.  Be creative!
 
     github-mergevelocity --url https://github.com/neilbowers/PAUSE-Packages/issues
 
+=head2 org
+
+Expects an Github organization.  Multiple C<--org> args can be supplied.
+
+    github-mergevelocity --org libwww-perl
+
 =head2 github-user
 
 The username of your Github account.  You'll need this if you're hitting Github
