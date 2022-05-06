@@ -1,7 +1,7 @@
 package GitHub::MergeVelocity::Repository::PullRequest;
 use Moo;
 
-our $VERSION = '0.000009';
+our $VERSION = '0.000010';
 
 use DateTime ();
 use GitHub::MergeVelocity::Types qw( Datetime );

@@ -2,7 +2,7 @@ package GitHub::MergeVelocity;
 
 use Moo 1.007000;
 
-our $VERSION = '0.000009';
+our $VERSION = '0.000010';
 
 use CLDR::Number::Format::Percent     ();
 use File::HomeDir                     ();

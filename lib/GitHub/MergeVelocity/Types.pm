@@ -3,7 +3,7 @@ package GitHub::MergeVelocity::Types;
 use strict;
 use warnings;
 
-our $VERSION = '0.000009';
+our $VERSION = '0.000010';
 
 use DateTime::Format::ISO8601;
 use Type::Library -base, -declare => ('Datetime');

@@ -2,7 +2,7 @@ package GitHub::MergeVelocity::Repository;
 
 use Moo;
 
-our $VERSION = '0.000009';
+our $VERSION = '0.000010';
 
 use GitHub::MergeVelocity::Repository::PullRequest ();
 use GitHub::MergeVelocity::Repository::Statistics  ();
