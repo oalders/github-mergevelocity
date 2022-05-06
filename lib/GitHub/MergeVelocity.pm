@@ -12,10 +12,12 @@ use MooX::HandlesVia;
 use MooX::Options;
 use MooX::StrictConstructor;
 use Path::Tiny qw( path );
-use Pithub::PullRequests         ();
 use Text::SimpleTable::AutoWidth ();
+use Pithub::PullRequests         ();
+use Pithub::Repos                ();
 use Types::Standard qw( ArrayRef Bool HashRef InstanceOf Int Str );
 use WWW::Mechanize::GZip ();
+use List::Util qw( uniq );
 
 option debug_useragent => (
     is            => 'ro',
@@ -55,9 +57,17 @@ option url => (
     is            => 'ro',
     isa           => ArrayRef,
     format        => 's@',
-    required      => 1,
+    required      => 0,
     documentation =>
         'Full Github repo url or shorthand of username/repository.  You can pass multiple url args.',
+);
+
+option org => (
+    is            => 'ro',
+    isa           => ArrayRef,
+    format        => 's@',
+    required      => 0,
+    documentation => 'An organization.  You can pass multiple url args.',
 );
 
 has _report => (
@@ -134,13 +144,39 @@ sub _build_report {
 
     my %report;
 
-    foreach my $url ( @{ $self->url } ) {
+    # Where we put all urls (from --url AND/OR --org)
+    my @urls = ();
+
+    # Where will go urls found from --org
+    my @org_urls = ();
+    if ( $self->org ) {
+        foreach my $org ( @{ $self->org } ) {
+            my $repos  = Pithub::Repos->new;
+            my $result = $repos->list( org => $org );
+
+            if ( ref $result->content eq 'ARRAY' ) {
+                foreach my $repo ( @{ $result->content } ) {
+                    push @org_urls, $repo->{full_name};
+                }
+            }
+        }
+    }
+
+    # Merge --org urls with --url urls and clean dups
+    push @urls, @org_urls;
+    if ( $self->url ) {
+        push @urls, @{ $self->url };
+    }
+    @urls = uniq @urls;
+
+    foreach my $url (@urls) {
         my $repo = GitHub::MergeVelocity::Repository->new(
             github_client => $self->_github_client,
             url           => $url,
         );
         $report{$url} = $repo;
     }
+
     return \%report;
 }
 
@@ -164,6 +200,8 @@ sub print_report {
     $table->captions( \@cols );
 
     my @repos = map { $self->_repository_for_url($_) } $self->_report_urls;
+
+    return unless @repos;
 
     foreach my $repository (
         sort { $b->report->average_velocity <=> $a->report->average_velocity }
