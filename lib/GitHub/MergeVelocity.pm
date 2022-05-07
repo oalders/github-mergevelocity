@@ -148,7 +148,6 @@ sub _build_report {
     my @urls = ();
 
     # Where will go urls found from --org
-    my @org_urls = ();
     if ( $self->org ) {
         foreach my $org ( @{ $self->org } ) {
             my $repos  = Pithub::Repos->new;
@@ -157,13 +156,12 @@ sub _build_report {
             $result->auto_pagination(1);
 
             while ( my $row = $result->next ) {
-                push @org_urls, $row->{full_name};
+                push @urls, $row->{full_name};
             }
         }
     }
 
-    # Merge --org urls with --url urls and clean dups
-    push @urls, @org_urls;
+    # Merge --org urls (already in @urls) with --url urls
     if ( $self->url ) {
         push @urls, @{ $self->url };
     }
