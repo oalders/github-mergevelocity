@@ -5,10 +5,10 @@ use warnings;
 
 our $VERSION = '0.000010';
 
-use DateTime::Format::ISO8601;
+use DateTime::Format::ISO8601 ();
 use Type::Library -base, -declare => ('Datetime');
-use Type::Utils;
 use Types::Standard -types;
+use Type::Utils qw( class_type coerce from via );
 
 class_type Datetime, { class => "DateTime" };
 

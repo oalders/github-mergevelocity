@@ -7,17 +7,17 @@ our $VERSION = '0.000010';
 use CLDR::Number::Format::Percent     ();
 use File::HomeDir                     ();
 use GitHub::MergeVelocity::Repository ();
+use List::Util qw( uniq );
 use Module::Runtime qw( require_module use_module );
 use MooX::HandlesVia;
 use MooX::Options;
 use MooX::StrictConstructor;
 use Path::Tiny qw( path );
-use Text::SimpleTable::AutoWidth ();
 use Pithub::PullRequests         ();
 use Pithub::Repos                ();
+use Text::SimpleTable::AutoWidth ();
 use Types::Standard qw( ArrayRef Bool HashRef InstanceOf Int Str );
 use WWW::Mechanize::GZip ();
-use List::Util qw( uniq );
 
 option debug_useragent => (
     is            => 'ro',
