@@ -151,7 +151,10 @@ sub _build_report {
     my @org_urls = ();
     if ( $self->org ) {
         foreach my $org ( @{ $self->org } ) {
-            my $repos  = Pithub::Repos->new;
+            my $repos = Pithub::Repos->new(
+                $self->github_user  ? ( user  => $self->github_user )  : (),
+                $self->github_token ? ( token => $self->github_token ) : (),
+            );
             my $result = $repos->list( org => $org );
 
             $result->auto_pagination(1);
