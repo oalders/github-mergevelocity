@@ -3,9 +3,9 @@ use Moo;
 
 our $VERSION = '0.000010';
 
-use DateTime ();
+use DateTime                     ();
 use GitHub::MergeVelocity::Types qw( Datetime );
-use Math::Round qw( round );
+use Math::Round                  qw( round );
 use MooX::StrictConstructor;
 use Types::Standard qw( Bool Int Str );
 

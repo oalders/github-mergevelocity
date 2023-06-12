@@ -8,7 +8,7 @@ use GitHub::MergeVelocity::Repository::PullRequest ();
 use GitHub::MergeVelocity::Repository::Statistics  ();
 use MooX::StrictConstructor;
 use Types::Standard qw( ArrayRef Bool InstanceOf Str );
-use URI ();
+use URI             ();
 
 has github_client => (
     is       => 'ro',

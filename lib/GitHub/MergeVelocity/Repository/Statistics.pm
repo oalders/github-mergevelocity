@@ -4,7 +4,7 @@ use Moo;
 
 our $VERSION = '0.000010';
 
-use Math::Round qw( nearest round );
+use Math::Round     qw( nearest round );
 use Types::Standard qw( Bool Int );
 
 has average_velocity => (
